@@ -1,6 +1,6 @@
 # Did Registry
 
-Did-Registry stack of contracts are based on [Lacchain did registry](https://github.com/lacchain/lacchain-did-registry/tree/master)
+Did-Registry stack of contracts are based on [Lacchain did registry](https://github.com/lacchain/lacchain-did-registry/tree/master).
 
 ## Terminology
 
