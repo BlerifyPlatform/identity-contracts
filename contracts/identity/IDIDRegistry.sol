@@ -32,7 +32,7 @@ interface IDIDRegistry {
         uint validTo,
         uint changeTime,
         uint previousChange,
-        bool reason
+        bool compromised
     );
 
     function getControllers(
