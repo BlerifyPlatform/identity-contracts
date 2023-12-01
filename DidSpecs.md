@@ -1,4 +1,4 @@
-# did:lac1 method
+# LAC1 DID Method Specification
 
 ### Author
 
@@ -87,6 +87,14 @@ A sucessful create operation will render a value like `did:lac1:1iT4aTtv4iMBEvQM
 
 #### Read
 
+##### Controller Address
+
+Each identifier always has a controller address. By default, it is the same as the identifier address, but the resolver MUST check the read only contract function `identityController(address identity)` on the deployed [DID Registry smart contract](./contracts/identity/didRegistry/).
+
+This controller address MUST be represented in the DID document in the attribute `controller` and MUST be formated following the guidance as specified in the [DID Creation process](./DidSpecs.md#create)
+
+##### Enumerating Contract events to build the DID document
+
 To construct a valid DID document, first find all changes in history for an identity:
 
 1. perform an eth_call to changed(address identity) on the [DID Registry smart contract](./contracts/identity/didRegistry/DIDRegistry.sol) to get the latst block where a change occurred.
@@ -121,10 +129,10 @@ To construct a valid DID document, first find all changes in history for an iden
        );
    ```
 
-4. In any case if `DIDAttributeChanged` or `DIDDelegateChanged` has the attribute `previousChange` different to zero then go back to step 3 where `block=<value of previousChange>`
+4. In any case if the mentioned events have the attribute `previousChange` different to zero then go back to step 3 where `block=<value of previousChange>`
 5. After building the history of events for an address, interpret each event to build the DID document given the following:
 
-##### Attributes (DIDAttributeChanged)
+###### Attributes (DIDAttributeChanged)
 
 While any attribute can be emited in the `DIDAttributeChanged`, for the DID document we currently support adding to each of these sections of the DID
 document:
@@ -132,7 +140,7 @@ document:
 - [Verification Methods](./DIDAttributesServices.md#verification-methods)
 - [Service Endpoints](./DIDAttributesServices.md#service-endpoints)
 
-##### Delegate Keys (DIDDelegateChanged)
+###### Delegate Keys (DIDDelegateChanged)
 
 Delegate keys are Ethereum addresses that can either be general signing keys or optionally also perform authentication.
 
@@ -142,17 +150,17 @@ When a delegate is added or revoked, a `DIDDelegateChanged` event is published w
 
 The only 2 delegateTypes that are currently published in the DID document are:
 
-###### veriKey
+###### _'veriKey' delegate type_
 
 Which adds a EcdsaSecp256k1RecoveryMethod2020 to the verificationMethod section of the DID document with the blockchainAccountId(ethereumAddress) of the delegate, and adds a reference to it in the assertionMethod section.
 
-###### sigAuth
+###### _'sigAuth' delegate type_
 
 Which adds a EcdsaSecp256k1RecoveryMethod2020 to the verificationMethod section of document and a reference to it in the authentication section.
 
 _Note_ the delegateType is a bytes32 type.
 
-Valid on-chain delegates MUST be added to the verificationMethod array as EcdsaSecp256k1RecoveryMethod2020 entries, with the delegate address listed in the blockchainAccountId property and prefixed with eip155:<chainId>:, according to CAIP10
+Valid on-chain delegates MUST be added to the verificationMethod array as EcdsaSecp256k1RecoveryMethod2020 entries, with the delegate address listed in the blockchainAccountId property and prefixed with `eip155:<chainId>:`, according to [CAIP10](https://github.com/ChainAgnostic/CAIPs/blob/main/CAIPs/caip-10.md)
 
 Example:
 
@@ -168,7 +176,7 @@ Example:
 
 ##### DID Document versions
 
-Only events with a `validTo` (measured in seconds) greater or equal to the current time should be included in the DID document. It is also possible to know a DID Document where given a `versionTime` (specified the didURL query string) the resolution yields **all keys configured valid _since_ that time**; in such case the `validTo` entry MUST be greater or equal than `versionTime`.
+Only events with a `validTo` (measured in seconds) greater or equal to the current time should be included in the DID document. It is also possible to know a DID Document where given a `versionTime` or `versionId` (specified the didURL query string)
 
 ##### id properties of entries
 
@@ -182,7 +190,7 @@ Example
 - add key => #vm-1 is added
 - add another key => #vm-2 is added
 - add delegate => #vm-3 is added
-- add service => #service-1 ia added
+- add service => #service-1 is added
 - revoke first key => #vm-1 gets removed from the DID document; #vm-2 and #delegte-3 remain.
 - add another delegate => #vm-5 is added (earlier revocation is counted as an event)
 - first delegate expires => vm-3 is removed, #vm-5 remains intact
@@ -191,7 +199,7 @@ Example
 
 The DID Document may be updated by invoking the relevant smart contract functions as defined by the [DID registry](./contracts/identity/didRegistry/DIDRegistry.sol). This includes changes to the account owner, adding delegates and adding additional attributes. Please find a detailed description in the [DID Registry Documentation](./DidRegistry.md)
 
-These functions will trigger the respective Ethereum events which are used to build the DID Document for a given account as described in Enumerating Contract Events to build the DID Document.
+These functions will trigger the respective Ethereum events which are used to build the DID Document for a given account as described in [Enumerating Contract Events](./DidSpecs.md#enumerating-contract-events-to-build-the-did-document) to build the DID Document.
 
 **Note**: Extending the validity of some attribute/delegate in the DID Registry will create a new input in the DID Document.
 
