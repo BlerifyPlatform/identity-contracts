@@ -19,7 +19,7 @@ contract DIDRegistry is IDIDRegistry, Context {
     mapping(address => uint) public nonce;
 
     uint public minKeyRotationTime;
-    uint16 public constant version = 1;
+    uint16 public constant version = 2;
 
     constructor(uint _minKeyRotationTime) {
         minKeyRotationTime = _minKeyRotationTime;
