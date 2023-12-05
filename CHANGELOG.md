@@ -4,6 +4,7 @@
 
 - Add LAC1 DID Specification
 - Refactor contracts enhance code reusability
+- Set contract License to Apache-2.0
 
 ## 0.0.1
 
