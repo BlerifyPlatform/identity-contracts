@@ -465,17 +465,10 @@ contract DIDRegistry is IDIDRegistry, Context {
         uint256 revokeDeltaTime,
         bool compromised
     ) internal onlyController(identity, actor) {
-        uint256 expirationTime;
         bytes32 delegateTypeHash = keccak256(abi.encode(delegateType));
         uint256 currentTime = block.timestamp;
-        if (revokeDeltaTime == 0) {
-            expirationTime = currentTime;
-        } else {
-            expirationTime = _validateExp(
-                revokeDeltaTime,
-                delegates[identity][delegateTypeHash][delegate]
-            );
-        }
+        // no matter if the attribute was issued before it just sets the revoked time
+        uint256 expirationTime = currentTime - revokeDeltaTime;
         address id = identity;
         delegates[id][delegateTypeHash][delegate] = expirationTime;
         emit DIDDelegateChanged(
@@ -539,14 +532,5 @@ contract DIDRegistry is IDIDRegistry, Context {
             revokeDeltaTime,
             compromised
         );
-    }
-
-    function _validateExp(
-        uint256 revokeDeltaTime,
-        uint256 initialTime
-    ) private view returns (uint256 t) {
-        uint256 currentTime = block.timestamp;
-        require(currentTime - revokeDeltaTime >= initialTime, "IP");
-        t = currentTime - revokeDeltaTime;
     }
 }
