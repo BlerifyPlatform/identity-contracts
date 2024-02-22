@@ -49,7 +49,7 @@ contract DIDRegistry is IDIDRegistry, Context {
         uint len = controllers[identity].length;
         if (len == 0) return identity;
         if (len == 1) return controllers[identity][0];
-        DIDConfig storage config = configs[identity];
+        DIDConfig memory config = configs[identity];
         address controller = address(0);
         if (config.automaticRotation) {
             uint currentController = block
@@ -86,6 +86,9 @@ contract DIDRegistry is IDIDRegistry, Context {
         config.currentController = index;
     }
 
+    /**
+     * Returns the index for a passed address `controller`. If the passed address is not registered as a controller it returns -1
+     */
     function _getControllerIndex(
         address identity,
         address controller
@@ -147,18 +150,12 @@ contract DIDRegistry is IDIDRegistry, Context {
     ) internal onlyController(identity, actor) {
         int controllerIndex = _getControllerIndex(identity, newController);
 
-        require(controllerIndex >= 0, "Controller not exist");
+        require(controllerIndex >= 0, "Controller does not exist");
 
-        if (controllerIndex >= 0) {
-            setCurrentController(identity, uint(controllerIndex));
+        setCurrentController(identity, uint(controllerIndex));
 
-            emit DIDControllerChanged(
-                identity,
-                newController,
-                changed[identity]
-            );
-            changed[identity] = block.number;
-        }
+        emit DIDControllerChanged(identity, newController, changed[identity]);
+        changed[identity] = block.number;
     }
 
     function enableKeyRotation(
@@ -179,6 +176,12 @@ contract DIDRegistry is IDIDRegistry, Context {
         address actor
     ) internal onlyController(identity, actor) {
         configs[identity].automaticRotation = false;
+    }
+
+    function isKeyRotationEnabled(
+        address identity
+    ) external view returns (bool) {
+        return configs[identity].automaticRotation;
     }
 
     function addController(
