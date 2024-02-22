@@ -31,9 +31,16 @@ contract DIDRegistry is IDIDRegistry, Context {
     }
 
     function getControllers(
-        address subject
-    ) public view returns (address[] memory) {
-        return controllers[subject];
+        address identity
+    ) public view returns (address[] memory controllerList) {
+        controllerList = controllers[identity];
+        uint len = controllerList.length;
+        if (len == 0) {
+            address[] memory c = new address[](1);
+            c[0] = identity;
+            return c;
+        }
+        return controllerList;
     }
 
     function identityController(

@@ -35,8 +35,12 @@ interface IDIDRegistry {
         bool compromised
     );
 
+    /**
+     * Returns an array of one or more controllers. By default the controller of any identity is the identity itself.
+     * @param identity The account to find controllers for
+     */
     function getControllers(
-        address subject
+        address identity
     ) external returns (address[] memory);
 
     function identityController(

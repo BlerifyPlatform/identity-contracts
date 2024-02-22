@@ -49,16 +49,13 @@ describe("Controller", function () {
     };
   }
 
-  it("Should change controller", async function () {
+  it("Should switch the main controller with one of the registered controllers, on authorized attempt", async function () {
     const { didRegistry, account1, account2, Artifact } =
       await deployDidRegistry();
     const didRegFromAcct1 = (await getArtifact(account1)).attach(
       didRegistry.address
     );
-    const tx0 = await didRegFromAcct1.addController(
-      account1.address,
-      account2.address
-    );
+    await didRegFromAcct1.addController(account1.address, account2.address);
     const tx = await didRegFromAcct1.changeController(
       account1.address,
       account2.address
@@ -81,5 +78,18 @@ describe("Controller", function () {
         throw new Error("Workaround ..."); // should never reach here since it is expected that issue operation will fail.
       } catch (e) {}
     }
+  });
+  it("Should not add an account in controllers if it is a controller already", async function () {
+    const { didRegistry, owner, account1, account2 } =
+      await deployDidRegistry();
+    const didRegFromAcct1 = (await getArtifact(account1)).attach(
+      didRegistry.address
+    );
+    await didRegFromAcct1.addController(account1.address, account2.address);
+    await didRegFromAcct1.addController(account1.address, account2.address);
+    const controllerLength = (
+      await didRegFromAcct1.getControllers(account1.address)
+    ).length;
+    expect(controllerLength).to.equal(2);
   });
 });
