@@ -3,9 +3,11 @@
 pragma solidity 0.8.18;
 
 import "./DIDRegistry.sol";
+
+import "../IDIDRegistryRecoverable.sol";
 import "../SafeMath.sol";
 
-contract DIDRegistryRecoverable is DIDRegistry {
+contract DIDRegistryRecoverable is DIDRegistry, IDIDRegistryRecoverable {
     uint private maxAttempts;
     uint private minControllers;
     uint private resetSeconds;
@@ -31,33 +33,32 @@ contract DIDRegistryRecoverable is DIDRegistry {
         uint8 sigV,
         bytes32 sigR,
         bytes32 sigS,
-        address proofController
-    ) public {
-        require(
-            controllers[identity].length >= minControllers,
-            "Identity must have the minimum of controllers"
-        );
+        address backupController
+    ) public returns (DIDRecoverResult memory result) {
+        require(controllers[identity].length >= minControllers, "MNCNA");
         bytes32 hash = keccak256(
             abi.encodePacked(
                 bytes1(0x19),
                 bytes1(0),
                 this,
-                nonce[identityController(identity)],
+                nonce[backupController],
                 identity,
                 "recover",
-                proofController
+                backupController
             )
         );
         address signer = ecrecover(hash, sigV, sigR, sigS);
-        require(signer == proofController, "Invalid signature");
+        require(signer == backupController, "IS");
 
         require(
             failedAttempts[identity] < maxAttempts ||
                 block.timestamp - lastAttempt[identity] > resetSeconds,
-            "Exceeded attempts"
+            "EA"
         );
 
-        if (_getControllerIndex(identity, proofController) < 0) return;
+        if (_getControllerIndex(identity, backupController) < 0) {
+            return result;
+        }
 
         if (block.timestamp - lastAttempt[identity] > resetSeconds) {
             failedAttempts[identity] = 0;
@@ -65,21 +66,27 @@ contract DIDRegistryRecoverable is DIDRegistry {
         }
         lastAttempt[identity] = block.timestamp;
 
-        int recoveredIndex = _getRecoveredIndex(identity, proofController);
+        int recoveredIndex = _getRecoveredIndex(identity, backupController);
         if (recoveredIndex >= 0) {
             failedAttempts[identity] += 1;
-            return;
+            return result;
         }
 
-        recoveredKeys[identity].push(proofController);
+        recoveredKeys[identity].push(backupController);
 
+        /* 50% +1 of backup controllers must agree to add the candidate controller as a main controller */
         if (
             recoveredKeys[identity].length >=
             controllers[identity].length.div(2).add(1)
         ) {
-            changeController(identity, identity, proofController);
+            changeController(identity, identity, backupController);
             delete recoveredKeys[identity];
+            result.isMainControllerChanged = true;
+            result.isVoteAdded = true;
+            return result;
         }
+        result.isVoteAdded = true;
+        return result;
     }
 
     function _getRecoveredIndex(

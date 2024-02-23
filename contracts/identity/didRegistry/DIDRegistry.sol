@@ -26,14 +26,21 @@ contract DIDRegistry is IDIDRegistry, Context {
     }
 
     modifier onlyController(address identity, address actor) {
-        require(actor == identityController(identity), "Not authorized");
+        require(actor == identityController(identity), "NA");
         _;
     }
 
     function getControllers(
-        address subject
-    ) public view returns (address[] memory) {
-        return controllers[subject];
+        address identity
+    ) public view returns (address[] memory controllerList) {
+        controllerList = controllers[identity];
+        uint len = controllerList.length;
+        if (len == 0) {
+            address[] memory c = new address[](1);
+            c[0] = identity;
+            return c;
+        }
+        return controllerList;
     }
 
     function identityController(
@@ -42,7 +49,7 @@ contract DIDRegistry is IDIDRegistry, Context {
         uint len = controllers[identity].length;
         if (len == 0) return identity;
         if (len == 1) return controllers[identity][0];
-        DIDConfig storage config = configs[identity];
+        DIDConfig memory config = configs[identity];
         address controller = address(0);
         if (config.automaticRotation) {
             uint currentController = block
@@ -69,7 +76,7 @@ contract DIDRegistry is IDIDRegistry, Context {
         bytes32 hash
     ) internal returns (address) {
         address signer = ecrecover(hash, sigV, sigR, sigS);
-        require(signer == identityController(identity));
+        require(signer == identityController(identity), "IS");
         nonce[signer]++;
         return signer;
     }
@@ -79,6 +86,9 @@ contract DIDRegistry is IDIDRegistry, Context {
         config.currentController = index;
     }
 
+    /**
+     * Returns the index for a passed address `controller`. If the passed address is not registered as a controller it returns -1
+     */
     function _getControllerIndex(
         address identity,
         address controller
@@ -111,17 +121,11 @@ contract DIDRegistry is IDIDRegistry, Context {
         address actor,
         address controller
     ) internal onlyController(identity, actor) {
-        require(
-            controllers[identity].length > 1,
-            "You need at least two controllers to delete"
-        );
-        require(
-            identityController(identity) != controller,
-            "Cannot delete current controller"
-        );
+        require(controllers[identity].length > 1, "ALTCR");
+        require(identityController(identity) != controller, "CDMC");
         int controllerIndex = _getControllerIndex(identity, controller);
 
-        require(controllerIndex >= 0, "Controller not exist");
+        require(controllerIndex >= 0, "CDNE");
 
         uint len = controllers[identity].length;
         address lastController = controllers[identity][len - 1];
@@ -140,18 +144,12 @@ contract DIDRegistry is IDIDRegistry, Context {
     ) internal onlyController(identity, actor) {
         int controllerIndex = _getControllerIndex(identity, newController);
 
-        require(controllerIndex >= 0, "Controller not exist");
+        require(controllerIndex >= 0, "CDNE");
 
-        if (controllerIndex >= 0) {
-            setCurrentController(identity, uint(controllerIndex));
+        setCurrentController(identity, uint(controllerIndex));
 
-            emit DIDControllerChanged(
-                identity,
-                newController,
-                changed[identity]
-            );
-            changed[identity] = block.number;
-        }
+        emit DIDControllerChanged(identity, newController, changed[identity]);
+        changed[identity] = block.number;
     }
 
     function enableKeyRotation(
@@ -159,10 +157,7 @@ contract DIDRegistry is IDIDRegistry, Context {
         address actor,
         uint keyRotationTime
     ) internal onlyController(identity, actor) {
-        require(
-            keyRotationTime >= minKeyRotationTime,
-            "Invalid minimum key rotation time"
-        );
+        require(keyRotationTime >= minKeyRotationTime, "VLTGRT");
         configs[identity].automaticRotation = true;
         configs[identity].keyRotationTime = keyRotationTime;
     }
@@ -172,6 +167,12 @@ contract DIDRegistry is IDIDRegistry, Context {
         address actor
     ) internal onlyController(identity, actor) {
         configs[identity].automaticRotation = false;
+    }
+
+    function isKeyRotationEnabled(
+        address identity
+    ) external view returns (bool) {
+        return configs[identity].automaticRotation;
     }
 
     function addController(
@@ -377,9 +378,7 @@ contract DIDRegistry is IDIDRegistry, Context {
         bytes32 delegateType,
         address delegate
     ) public view returns (bool) {
-        uint validity = delegates[identity][
-            keccak256(abi.encode(delegateType))
-        ][delegate];
+        uint validity = delegates[identity][delegateType][delegate];
         return (validity > block.timestamp);
     }
 
@@ -402,9 +401,7 @@ contract DIDRegistry is IDIDRegistry, Context {
         uint validity
     ) internal onlyController(identity, actor) {
         uint256 currentTime = block.timestamp;
-        delegates[identity][keccak256(abi.encode(delegateType))][delegate] =
-            currentTime +
-            validity;
+        delegates[identity][delegateType][delegate] = currentTime + validity;
         emit DIDDelegateChanged(
             identity,
             delegateType,
@@ -465,12 +462,11 @@ contract DIDRegistry is IDIDRegistry, Context {
         uint256 revokeDeltaTime,
         bool compromised
     ) internal onlyController(identity, actor) {
-        bytes32 delegateTypeHash = keccak256(abi.encode(delegateType));
         uint256 currentTime = block.timestamp;
         // no matter if the attribute was issued before it just sets the revoked time
         uint256 expirationTime = currentTime - revokeDeltaTime;
         address id = identity;
-        delegates[id][delegateTypeHash][delegate] = expirationTime;
+        delegates[id][delegateType][delegate] = expirationTime;
         emit DIDDelegateChanged(
             id,
             delegateType,

@@ -35,8 +35,12 @@ interface IDIDRegistry {
         bool compromised
     );
 
+    /**
+     * Returns an array of one or more controllers. By default the controller of any identity is the identity itself.
+     * @param identity The account to find controllers for
+     */
     function getControllers(
-        address subject
+        address identity
     ) external returns (address[] memory);
 
     function identityController(
@@ -47,6 +51,11 @@ interface IDIDRegistry {
 
     function removeController(address identity, address controller) external;
 
+    /**
+     * @dev Updates the main controller for an `identity`
+     * @param identity The main account
+     * @param newController Candidate to be the current main controller
+     */
     function changeController(address identity, address newController) external;
 
     function expirationAttribute(
@@ -144,4 +153,13 @@ interface IDIDRegistry {
     function enableKeyRotation(address identity, uint keyRotationTime) external;
 
     function disableKeyRotation(address identity) external;
+
+    /**
+     * Reurns whether key automatic rotation is enabled. This is, for a set of controllers candidate it is automatically chosen one
+     * for a time window whose value is set at the time of enabling the automatic rotation or a global value set at contract deployment.
+     * @param identity main identifier
+     */
+    function isKeyRotationEnabled(
+        address identity
+    ) external view returns (bool);
 }

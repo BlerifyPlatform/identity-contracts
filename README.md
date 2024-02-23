@@ -1,6 +1,6 @@
 # LACChain Identity Contracts
 
-Did-Registry stack of contracts are an extension of [Lacchain did registry](https://github.com/lacchain/lacchain-did-registry/tree/master) which in turn inherits from [ERC-1056](https://github.com/ethereum/EIPs/issues/1056)
+Did-Registry stack of contracts are an extension of [Lacchain DID registry](https://github.com/lacchain/lacchain-did-registry/tree/master) which in turn inherits from [ERC-1056](https://github.com/ethereum/EIPs/issues/1056); as such LACChain Identity Contracts implement an onchain DID Registry compliant with [W3C specifications registries](https://www.w3.org/TR/did-spec-registries/)
 
 ## Specifications
 
