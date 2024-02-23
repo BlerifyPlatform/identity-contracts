@@ -85,25 +85,25 @@ describe("Recovery", function () {
   }
 
   it("Should have the minimum controllers as set on contract deployment", async function () {
-    const { didRegistry, account1, account2 } =
-      await deployDidRegistryRecoverable();
+    const { didRegistry, account1 } = await deployDidRegistryRecoverable();
     const didRegFromAcct1 = (await getArtifact(account1)).attach(
       didRegistry.address
     );
-    await didRegFromAcct1.addController(account1.address, account2.address);
+    const signer = ethers.Wallet.createRandom();
+    await didRegFromAcct1.addController(account1.address, signer.address);
 
-    const specificNonce = await didRegistry.nonce(account2.address);
+    const specificNonce = await didRegistry.nonce(signer.address);
     const encodedMessage = getEncodedMessageToRecover(
       account1.address,
       didRegistry.address,
       specificNonce,
-      account2
+      signer
     );
-    const signedMessage = await account2.signMessage(encodedMessage);
+    const signedMessage = await signer.signMessage(encodedMessage);
     const { v, r, s } = ethers.utils.splitSignature(signedMessage);
     if (network.name !== "lacchain") {
       await expect(
-        didRegFromAcct1.recover(account1.address, v, r, s, account2.address)
+        didRegFromAcct1.recover(account1.address, v, r, s, signer.address)
       ).to.be.revertedWith("Identity must have the minimum of controllers");
     } else {
       try {
@@ -112,7 +112,7 @@ describe("Recovery", function () {
           v,
           r,
           s,
-          account2.address
+          signer.address
         );
         throw new Error("Workaround ...");
       } catch (e) {}
@@ -186,7 +186,7 @@ describe("Recovery", function () {
   });
 
   it("Should get successful vote added after valid params are presented", async function () {
-    const { didRegistry, owner, account1, account2 } =
+    const { didRegistry, owner, account1 } =
       await deployDidRegistryRecoverable();
     const didRegFromAcct1 = (await getArtifact(account1)).attach(
       didRegistry.address
