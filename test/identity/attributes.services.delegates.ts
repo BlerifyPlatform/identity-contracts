@@ -78,6 +78,22 @@ describe("Attributes-Services-Delegates", function () {
       );
       expect(expiresIn).to.be.greaterThan(Math.floor(Date.now() / 1000));
     });
+    it("Should add a verification method by metatransaction", async function () {
+      const { didRegistry } = await deployDidRegistry();
+      const signer = ethers.Wallet.createRandom();
+      const identity = signer.address;
+      const deltaTime = 86400;
+      const name = "asse/abc/mnp/xyz";
+      const value = "someValue";
+      await setCapabilitySignedMock(
+        signer,
+        identity,
+        didRegistry,
+        name,
+        value,
+        deltaTime
+      );
+    });
 
     it("Should revoke verification method", async function () {
       const { didRegistry, account1 } = await deployDidRegistry();
@@ -97,6 +113,60 @@ describe("Attributes-Services-Delegates", function () {
       );
       expect(expiresIn).to.be.lessThan(Math.floor(Date.now() / 1000));
     });
+
+    it("Should revoke a verification method by metatransaction", async function () {
+      const { didRegistry } = await deployDidRegistry();
+      const signer = ethers.Wallet.createRandom();
+      const identity = signer.address;
+      const revokeDeltaTime = 32000;
+      const name = "asse/abc/mnp/xyz";
+      const value = "someValue";
+      const isCompromised = false;
+      await revokeCapabilitySignedMock(
+        signer,
+        identity,
+        didRegistry,
+        name,
+        value,
+        revokeDeltaTime,
+        isCompromised
+      );
+    });
+    it("Should failto revoke a verification method by metatransaction on unauthorized attempt", async function () {
+      const { didRegistry, account1 } = await deployDidRegistry();
+      const signer = ethers.Wallet.createRandom();
+      const identity = account1.address;
+      const revokeDeltaTime = 32000;
+      const name = "asse/abc/mnp/xyz";
+      const value = "someValue";
+      const isCompromised = false;
+      if (network.name !== "lacchain") {
+        await expect(
+          revokeCapabilitySignedMock(
+            signer,
+            identity,
+            didRegistry,
+            name,
+            value,
+            revokeDeltaTime,
+            isCompromised
+          )
+        ).to.be.revertedWith("IS");
+      } else {
+        try {
+          await revokeCapabilitySignedMock(
+            signer,
+            identity,
+            didRegistry,
+            name,
+            value,
+            revokeDeltaTime,
+            isCompromised
+          );
+          throw new Error("Workaround ..."); // should never reach here since it is expected that issue operation will fail.
+        } catch (e) {}
+      }
+    });
   });
 
   describe("Delegates", function () {
@@ -108,7 +178,7 @@ describe("Attributes-Services-Delegates", function () {
       );
       const identity = account1.address;
 
-      await mockAddOnchainDelegate(
+      await addOnchainDelegateMock(
         "sigAuth",
         identity,
         didRegFromAcct1,
@@ -121,7 +191,7 @@ describe("Attributes-Services-Delegates", function () {
       const signer = ethers.Wallet.createRandom();
       const identity = signer.address;
       const deltaTime = 86400;
-      await mockAddOnchainDelegateSigned(
+      await addOnchainDelegateSignedMock(
         signer,
         "sigAuth",
         didRegistry,
@@ -138,7 +208,7 @@ describe("Attributes-Services-Delegates", function () {
       const deltaTime = 86400;
       if (network.name !== "lacchain") {
         await expect(
-          mockAddOnchainDelegateSigned(
+          addOnchainDelegateSignedMock(
             signer,
             "sigAuth",
             didRegistry,
@@ -146,10 +216,10 @@ describe("Attributes-Services-Delegates", function () {
             identity,
             deltaTime
           )
-        ).to.be.revertedWith("Invalid signature");
+        ).to.be.revertedWith("IS");
       } else {
         try {
-          await mockAddOnchainDelegateSigned(
+          await addOnchainDelegateSignedMock(
             signer,
             "sigAuth",
             didRegistry,
@@ -170,13 +240,13 @@ describe("Attributes-Services-Delegates", function () {
       );
       const identity = account1.address;
 
-      await mockAddOnchainDelegate(
+      await addOnchainDelegateMock(
         "sigAuth",
         identity,
         didRegFromAcct1,
         account2.address
       );
-      await mockRevokeOnchainDelegate(
+      await revokeOnchainDelegateMock(
         "sigAuth",
         identity,
         didRegFromAcct1,
@@ -190,7 +260,7 @@ describe("Attributes-Services-Delegates", function () {
       const identity = signer.address;
       const deltaTime = 32000;
       const isCompromised = false;
-      await mockRevokeOnchainDelegateSigned(
+      await revokeOnchainDelegateSignedMock(
         signer,
         "sigAuth",
         didRegistry,
@@ -220,6 +290,113 @@ describe("Attributes-Services-Delegates", function () {
     );
   }
 
+  async function revokeCapabilitySignedMock(
+    signer: Wallet,
+    identity: string,
+    didRegistry: DIDRegistry | DIDRegistryGM,
+    name: string,
+    value: string,
+    revokeDeltaTime: number,
+    isCompromised: boolean
+  ) {
+    const bytesName = toUtf8Bytes(name);
+    const bytesValue = toUtf8Bytes(value);
+    const signature = await preparePayloadForRevokeCapabilitySigned(
+      identity,
+      signer,
+      didRegistry,
+      name,
+      value,
+      revokeDeltaTime,
+      isCompromised
+    );
+    await didRegistry.revokeAttributeSigned(
+      identity,
+      signature.v,
+      signature.r,
+      signature.s,
+      bytesName,
+      bytesValue,
+      revokeDeltaTime,
+      isCompromised
+    );
+
+    const expiresIn = await didRegistry.attributes(
+      identity,
+      keccak256(bytesName),
+      keccak256(bytesValue)
+    );
+    expect(expiresIn).to.be.lessThan(
+      Math.floor(Date.now() / 1000) - revokeDeltaTime / 2
+    );
+  }
+
+  async function preparePayloadForRevokeCapabilitySigned(
+    identity: string,
+    signer: Wallet,
+    didRegistry: DIDRegistry | DIDRegistryGM,
+    name: string,
+    value: string,
+    revokeDeltaTime: number,
+    isCompromised: boolean
+  ) {
+    const specificNonce = await didRegistry.nonce(signer.address);
+
+    const encodedMessage = computeTypedDataForRevokeCapabilitySigned(
+      identity,
+      didRegistry.address,
+      specificNonce,
+      name,
+      value,
+      revokeDeltaTime,
+      isCompromised
+    );
+
+    const messageDigest = keccak256(arrayify(encodedMessage));
+
+    const signingKey = signer._signingKey;
+    return signingKey().signDigest(messageDigest);
+  }
+
+  function computeTypedDataForRevokeCapabilitySigned(
+    identity: string,
+    didRegistryAddress: string,
+    specificNonce: BigNumber,
+    name: string,
+    value: string,
+    revokeDeltaTime: number,
+    isCompromised: boolean
+  ): string {
+    const bytesName = toUtf8Bytes(name);
+    const bytesValue = toUtf8Bytes(value);
+    return solidityPack(
+      [
+        "bytes1",
+        "bytes1",
+        "address",
+        "uint256",
+        "address",
+        "string",
+        "bytes",
+        "bytes",
+        "uint256",
+        "bool",
+      ],
+      [
+        0x19,
+        0x00,
+        didRegistryAddress,
+        specificNonce,
+        identity,
+        "revokeAttribute",
+        bytesName,
+        bytesValue,
+        revokeDeltaTime,
+        isCompromised,
+      ]
+    );
+  }
+
   async function setCapabilityMock(
     identity: string,
     didRegistry: DIDRegistry | DIDRegistryGM,
@@ -240,7 +417,106 @@ describe("Attributes-Services-Delegates", function () {
     };
   }
 
-  async function mockAddOnchainDelegate(
+  async function setCapabilitySignedMock(
+    signer: Wallet,
+    identity: string,
+    didRegistry: DIDRegistry | DIDRegistryGM,
+    name: string,
+    value: string,
+    deltaTime: number
+  ) {
+    const bytesName = toUtf8Bytes(name);
+    const bytesValue = toUtf8Bytes(value);
+    const signature = await preparePayloadForAddCapabilitySigned(
+      identity,
+      signer,
+      didRegistry,
+      name,
+      value,
+      deltaTime
+    );
+    await didRegistry.setAttributeSigned(
+      identity,
+      signature.v,
+      signature.r,
+      signature.s,
+      bytesName,
+      bytesValue,
+      deltaTime
+    );
+
+    const expiresIn = await didRegistry.attributes(
+      identity,
+      keccak256(bytesName),
+      keccak256(bytesValue)
+    );
+    expect(expiresIn).to.be.greaterThan(
+      Math.floor(Date.now() / 1000) + deltaTime / 2
+    );
+  }
+
+  async function preparePayloadForAddCapabilitySigned(
+    identity: string,
+    signer: Wallet,
+    didRegistry: DIDRegistry | DIDRegistryGM,
+    name: string,
+    value: string,
+    deltaTime: number
+  ) {
+    const specificNonce = await didRegistry.nonce(signer.address);
+
+    const encodedMessage = computeTypedDataForAddCapabilitySigned(
+      identity,
+      didRegistry.address,
+      specificNonce,
+      name,
+      value,
+      deltaTime
+    );
+
+    const messageDigest = keccak256(arrayify(encodedMessage));
+
+    const signingKey = signer._signingKey;
+    return signingKey().signDigest(messageDigest);
+  }
+
+  function computeTypedDataForAddCapabilitySigned(
+    identity: string,
+    didRegistryAddress: string,
+    specificNonce: BigNumber,
+    name: string,
+    value: string,
+    deltaTime: number
+  ): string {
+    const bytesName = toUtf8Bytes(name);
+    const bytesValue = toUtf8Bytes(value);
+    return solidityPack(
+      [
+        "bytes1",
+        "bytes1",
+        "address",
+        "uint256",
+        "address",
+        "string",
+        "bytes",
+        "bytes",
+        "uint256",
+      ],
+      [
+        0x19,
+        0x00,
+        didRegistryAddress,
+        specificNonce,
+        identity,
+        "setAttribute",
+        bytesName,
+        bytesValue,
+        deltaTime,
+      ]
+    );
+  }
+
+  async function addOnchainDelegateMock(
     delegateType: "veriKey" | "sigAuth",
     identity: string,
     didRegistry: DIDRegistry | DIDRegistryGM,
@@ -273,7 +549,7 @@ describe("Attributes-Services-Delegates", function () {
     );
   }
 
-  async function mockAddOnchainDelegateSigned(
+  async function addOnchainDelegateSignedMock(
     signer: Wallet,
     delegateType: "veriKey" | "sigAuth",
     didRegistry: DIDRegistry | DIDRegistryGM,
@@ -378,7 +654,7 @@ describe("Attributes-Services-Delegates", function () {
     );
   }
 
-  async function mockRevokeOnchainDelegate(
+  async function revokeOnchainDelegateMock(
     delegateType: "veriKey" | "sigAuth",
     identity: string,
     didRegistry: DIDRegistry | DIDRegistryGM,
@@ -413,7 +689,7 @@ describe("Attributes-Services-Delegates", function () {
     );
   }
 
-  async function mockRevokeOnchainDelegateSigned(
+  async function revokeOnchainDelegateSignedMock(
     signer: Wallet,
     delegateType: "veriKey" | "sigAuth",
     didRegistry: DIDRegistry | DIDRegistryGM,
