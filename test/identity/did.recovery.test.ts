@@ -104,7 +104,7 @@ describe("Recovery", function () {
     if (network.name !== "lacchain") {
       await expect(
         didRegFromAcct1.recover(account1.address, v, r, s, signer.address)
-      ).to.be.revertedWith("Identity must have the minimum of controllers");
+      ).to.be.revertedWith("MNCNA");
     } else {
       try {
         await didRegFromAcct1.recover(
@@ -144,7 +144,7 @@ describe("Recovery", function () {
     if (network.name !== "lacchain") {
       await expect(
         didRegFromAcct1.recover(owner.address, v, r, s, account2.address)
-      ).to.be.revertedWith("Invalid signature");
+      ).to.be.revertedWith("IS");
     } else {
       try {
         await didRegFromAcct1.recover(owner.address, v, r, s, account2.address);

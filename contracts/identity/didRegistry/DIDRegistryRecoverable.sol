@@ -35,10 +35,7 @@ contract DIDRegistryRecoverable is DIDRegistry, IDIDRegistryRecoverable {
         bytes32 sigS,
         address backupController
     ) public returns (DIDRecoverResult memory result) {
-        require(
-            controllers[identity].length >= minControllers,
-            "Identity must have the minimum of controllers"
-        );
+        require(controllers[identity].length >= minControllers, "MNCNA");
         bytes32 hash = keccak256(
             abi.encodePacked(
                 bytes1(0x19),
@@ -51,12 +48,12 @@ contract DIDRegistryRecoverable is DIDRegistry, IDIDRegistryRecoverable {
             )
         );
         address signer = ecrecover(hash, sigV, sigR, sigS);
-        require(signer == backupController, "Invalid signature");
+        require(signer == backupController, "IS");
 
         require(
             failedAttempts[identity] < maxAttempts ||
                 block.timestamp - lastAttempt[identity] > resetSeconds,
-            "Exceeded attempts"
+            "EA"
         );
 
         if (_getControllerIndex(identity, backupController) < 0) {

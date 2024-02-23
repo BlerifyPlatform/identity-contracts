@@ -26,7 +26,7 @@ contract DIDRegistry is IDIDRegistry, Context {
     }
 
     modifier onlyController(address identity, address actor) {
-        require(actor == identityController(identity), "Not authorized");
+        require(actor == identityController(identity), "NA");
         _;
     }
 
@@ -76,7 +76,7 @@ contract DIDRegistry is IDIDRegistry, Context {
         bytes32 hash
     ) internal returns (address) {
         address signer = ecrecover(hash, sigV, sigR, sigS);
-        require(signer == identityController(identity), "Invalid signature");
+        require(signer == identityController(identity), "IS");
         nonce[signer]++;
         return signer;
     }
@@ -121,17 +121,11 @@ contract DIDRegistry is IDIDRegistry, Context {
         address actor,
         address controller
     ) internal onlyController(identity, actor) {
-        require(
-            controllers[identity].length > 1,
-            "You need at least two controllers to delete"
-        );
-        require(
-            identityController(identity) != controller,
-            "Cannot delete current controller"
-        );
+        require(controllers[identity].length > 1, "ALTCR");
+        require(identityController(identity) != controller, "CDMC");
         int controllerIndex = _getControllerIndex(identity, controller);
 
-        require(controllerIndex >= 0, "Controller not exist");
+        require(controllerIndex >= 0, "CDNE");
 
         uint len = controllers[identity].length;
         address lastController = controllers[identity][len - 1];
@@ -150,7 +144,7 @@ contract DIDRegistry is IDIDRegistry, Context {
     ) internal onlyController(identity, actor) {
         int controllerIndex = _getControllerIndex(identity, newController);
 
-        require(controllerIndex >= 0, "Controller does not exist");
+        require(controllerIndex >= 0, "CDNE");
 
         setCurrentController(identity, uint(controllerIndex));
 
@@ -163,10 +157,7 @@ contract DIDRegistry is IDIDRegistry, Context {
         address actor,
         uint keyRotationTime
     ) internal onlyController(identity, actor) {
-        require(
-            keyRotationTime >= minKeyRotationTime,
-            "Invalid minimum key rotation time"
-        );
+        require(keyRotationTime >= minKeyRotationTime, "VLTGRT");
         configs[identity].automaticRotation = true;
         configs[identity].keyRotationTime = keyRotationTime;
     }

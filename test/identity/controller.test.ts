@@ -71,7 +71,7 @@ describe("Controller", function () {
     if (network.name !== "lacchain") {
       await expect(
         didRegistry.addController(account1.address, owner.address)
-      ).to.be.revertedWith("Not authorized");
+      ).to.be.revertedWith("NA");
     } else {
       try {
         await didRegistry.addController(account1.address, owner.address);
