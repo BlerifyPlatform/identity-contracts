@@ -44,7 +44,7 @@ contract DIDRegistryRecoverable is DIDRegistry, IDIDRegistryRecoverable {
                 bytes1(0x19),
                 bytes1(0),
                 this,
-                nonce[identityController(identity)],
+                nonce[backupController],
                 identity,
                 "recover",
                 backupController
