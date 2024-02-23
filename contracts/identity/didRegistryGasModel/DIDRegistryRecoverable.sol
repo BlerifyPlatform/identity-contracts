@@ -23,7 +23,7 @@ contract DIDRegistryRecoverableGM is
             _minControllers,
             _resetSeconds
         )
-        BaseRelayRecipient(trustedForwarder)
+        BaseRelayRecipient(trustedForwarderAddr)
     {}
 
     /**
