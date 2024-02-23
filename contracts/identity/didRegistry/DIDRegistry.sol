@@ -387,9 +387,7 @@ contract DIDRegistry is IDIDRegistry, Context {
         bytes32 delegateType,
         address delegate
     ) public view returns (bool) {
-        uint validity = delegates[identity][
-            keccak256(abi.encode(delegateType))
-        ][delegate];
+        uint validity = delegates[identity][delegateType][delegate];
         return (validity > block.timestamp);
     }
 
@@ -412,9 +410,7 @@ contract DIDRegistry is IDIDRegistry, Context {
         uint validity
     ) internal onlyController(identity, actor) {
         uint256 currentTime = block.timestamp;
-        delegates[identity][keccak256(abi.encode(delegateType))][delegate] =
-            currentTime +
-            validity;
+        delegates[identity][delegateType][delegate] = currentTime + validity;
         emit DIDDelegateChanged(
             identity,
             delegateType,
@@ -475,12 +471,11 @@ contract DIDRegistry is IDIDRegistry, Context {
         uint256 revokeDeltaTime,
         bool compromised
     ) internal onlyController(identity, actor) {
-        bytes32 delegateTypeHash = keccak256(abi.encode(delegateType));
         uint256 currentTime = block.timestamp;
         // no matter if the attribute was issued before it just sets the revoked time
         uint256 expirationTime = currentTime - revokeDeltaTime;
         address id = identity;
-        delegates[id][delegateTypeHash][delegate] = expirationTime;
+        delegates[id][delegateType][delegate] = expirationTime;
         emit DIDDelegateChanged(
             id,
             delegateType,
