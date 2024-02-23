@@ -76,7 +76,7 @@ contract DIDRegistry is IDIDRegistry, Context {
         bytes32 hash
     ) internal returns (address) {
         address signer = ecrecover(hash, sigV, sigR, sigS);
-        require(signer == identityController(identity));
+        require(signer == identityController(identity), "Invalid signature");
         nonce[signer]++;
         return signer;
     }
