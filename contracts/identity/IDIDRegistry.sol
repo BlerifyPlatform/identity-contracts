@@ -9,12 +9,30 @@ interface IDIDRegistry {
         uint keyRotationTime;
     }
 
+    /**
+     *
+     * @param identity the main account representing a unique idenfier
+     * @param controller the account having full privileges over `identity`
+     * @param previousChange indicates the block number at which a previous change was recorded for `identity`
+     */
     event DIDControllerChanged(
         address indexed identity,
         address controller,
         uint previousChange
     );
 
+    /**
+     *
+     * @param identity the main account representing a unique idenfier
+     * @param name the metadata identifying the param `value`
+     * @param value the value representing the attribute value
+     * @param validTo number representing 10 digit unix timestamp (in seconds) for which the association/disassociation will be/was valid
+     * @param changeTime the time at which the association/disassociation is made, typically block.timestamp
+     * @param previousChange indicates the block number at which a previous change was recorded for `identity`
+     * @param compromised By default `compromised` is false. When `validTo` is less or equal to changeTime this event will represent a
+     * disassociation `delegate`/`delegateType` from `identity` in such scenario `compromised` can be set to true to inform that such disassociation
+     * was made because of compromission of the `attribute` (for example, when the attribute is a cryptographic key)
+     */
     event DIDAttributeChanged(
         address indexed identity,
         bytes name,
@@ -25,6 +43,17 @@ interface IDIDRegistry {
         bool compromised
     );
 
+    /**
+     * @param identity the main account representing a unique idenfier
+     * @param delegateType the type of delegate associated/disassociated to `delegate` for `identity`
+     * @param delegate the account assigned as a delegate
+     * @param validTo number representing 10 digit unix timestamp (in seconds) for which the association/disassociation will be/was valid
+     * @param changeTime the time at which the association/disassociation `delegate`/`delegateType` for `identity` is registered
+     * @param previousChange indicates the block number at which a previous change was recorded for `identity`
+     * @param compromised By default `compromised` is false. When `validTo` is less or equal to changeTime this event will represent a
+     * disassociation `delegate`/`delegateType` from `identity` in such scenario `compromised` can be set to true to inform that such disassociation
+     * was made because of compromission of the `delegate` account
+     */
     event DIDDelegateChanged(
         address indexed identity,
         bytes32 delegateType,
@@ -43,27 +72,40 @@ interface IDIDRegistry {
         address identity
     ) external returns (address[] memory);
 
+    /**
+     * @dev returns the current main controller for `identity`
+     * @param identity the main account representing a unique idenfier
+     */
     function identityController(
         address identity
     ) external view returns (address);
 
     function addController(address identity, address controller) external;
 
+    /**
+     * @dev By using this method, an identity can handle its backup controllers
+     * @param identity the main account representing a unique idenfier
+     * @param controller of the controllers backup to be disassociated from `identity`
+     */
     function removeController(address identity, address controller) external;
 
     /**
      * @dev Updates the main controller for an `identity`
-     * @param identity The main account
+     * @param identity the main account representing a unique idenfier
      * @param newController Candidate to be the current main controller
      */
     function changeController(address identity, address newController) external;
 
-    function expirationAttribute(
-        address identity,
-        bytes32 attributeNameHash,
-        bytes32 attributeValueHash
-    ) external view returns (uint256);
-
+    /**
+     * @dev The same as `changeController` method but rather than directly signing the transaction it is signed by any account but
+     * the main intention is presented alongside a signature (with params v,r,s) which is used to verify that the signer (who generated v,r,s)
+     * is authorized and that the intention is valid.
+     * @param identity the main account representing a unique idenfier
+     * @param sigV The `v` param after signing following ecdsa algorithm
+     * @param sigR The `r` param after signing following ecdsa algorithm
+     * @param sigS The `s` param after signing following ecdsa algorithm
+     * @param newController Candidate to be the current main controller
+     */
     function changeControllerSigned(
         address identity,
         uint8 sigV,
@@ -72,6 +114,13 @@ interface IDIDRegistry {
         address newController
     ) external;
 
+    /**
+     * @dev This method allows to make an association `name`/`value` with `identity`
+     * @param identity the main account representing a unique idenfier
+     * @param name the metadata identifying the param `value`
+     * @param value the value representing the attribute to be associated with `identity`
+     * @param validity number representing 10 digit unix timestamp (in seconds) for which the association will be/was valid
+     */
     function setAttribute(
         address identity,
         bytes memory name,
@@ -79,6 +128,18 @@ interface IDIDRegistry {
         uint validity
     ) external;
 
+    /**
+     * @dev The same as `setAttribute` method but rather than directly signing the transaction it is signed by any account but
+     * the main intention is presented alongside a signature (with params v,r,s) which is used to verify that the signer (who generated v,r,s)
+     * is authorized and that the intention is valid.
+     * @param identity the main account representing a unique idenfier
+     * @param sigV The `v` param after signing following ecdsa algorithm
+     * @param sigR The `r` param after signing following ecdsa algorithm
+     * @param sigS The `s` param after signing following ecdsa algorithm
+     * @param name the metadata identifying the param `value`
+     * @param value the value representing the attribute to be associated with `identity`
+     * @param validity number, 10 digit unix timestamp (in seconds), representing a period of time for which the association will be valid
+     */
     function setAttributeSigned(
         address identity,
         uint8 sigV,
@@ -89,6 +150,16 @@ interface IDIDRegistry {
         uint validity
     ) external;
 
+    /**
+     *
+     * @param identity the main account representing a unique idenfier
+     * @param name the metadata identifying the param `value`
+     * @param value the value representing the attribute to be associated with `identity`
+     * @param revokeDeltaTime number, 10 digit unix timestamp (in seconds), representing a period of time until which the
+     * association was valid
+     * @param compromised can be set to true to inform that the disassociation is made because of compromission of the
+     * attribute (for example, when the attribute is a cryptographic key)
+     */
     function revokeAttribute(
         address identity,
         bytes memory name,
@@ -97,6 +168,21 @@ interface IDIDRegistry {
         bool compromised
     ) external;
 
+    /**
+     * @dev The same as `revokeAttribute` method but rather than directly signing the transaction it is signed by any account but
+     * the main intention is presented alongside a signature (with params v,r,s) which is used to verify that the signer (who generated v,r,s)
+     * is authorized and that the intention is valid.
+     * @param identity the main account representing a unique idenfier
+     * @param sigV The `v` param after signing following ecdsa algorithm
+     * @param sigR The `r` param after signing following ecdsa algorithm
+     * @param sigS The `s` param after signing following ecdsa algorithm
+     * @param name the metadata identifying the param `value`
+     * @param value the value representing the attribute to be associated with `identity`
+     * @param revokeDeltaTime number, 10 digit unix timestamp (in seconds), representing a period of time until which the
+     * association was valid
+     * @param compromised can be set to true to inform that the disassociation is made because of compromission of the
+     * attribute (for example, when the attribute is a cryptographic key)
+     */
     function revokeAttributeSigned(
         address identity,
         uint8 sigV,
@@ -108,12 +194,13 @@ interface IDIDRegistry {
         bool compromised
     ) external;
 
-    function validDelegate(
-        address identity,
-        bytes32 delegateType,
-        address delegate
-    ) external view returns (bool);
-
+    /**
+     * @dev This method allows to make an association `delegateType`/`delegate` with `identity`.
+     * @param identity the main account representing a unique idenfier
+     * @param delegateType the type of delegate associated to `delegate` for `identity`
+     * @param delegate the account assigned as a delegate
+     * @param validity number, 10 digit unix timestamp (in seconds), representing a period of time for which the association will be valid
+     */
     function addDelegate(
         address identity,
         bytes32 delegateType,
@@ -121,6 +208,18 @@ interface IDIDRegistry {
         uint validity
     ) external;
 
+    /**
+     * @dev The same as `addDelegate` method but rather than directly signing the transaction it is signed by any account but
+     * the main intention is presented alongside a signature (with params v,r,s) which is used to verify that the signer (who generated v,r,s)
+     * is authorized and that the intention is valid.
+     * @param identity the main account representing a unique idenfier
+     * @param sigV The `v` param after signing following ecdsa algorithm
+     * @param sigR The `r` param after signing following ecdsa algorithm
+     * @param sigS The `s` param after signing following ecdsa algorithm
+     * @param delegateType the type of delegate associated to `delegate` for `identity`
+     * @param delegate the account assigned as a delegate
+     * @param validity number, 10 digit unix timestamp (in seconds), representing a period of time for which the association will be valid
+     */
     function addDelegateSigned(
         address identity,
         uint8 sigV,
@@ -131,6 +230,16 @@ interface IDIDRegistry {
         uint validity
     ) external;
 
+    /**
+     *
+     * @param identity the main account representing a unique idenfier
+     * @param delegateType the type of delegate associated to `delegate` for `identity`
+     * @param delegate the account assigned as a delegate
+     * @param revokeDeltaTime number, 10 digit unix timestamp (in seconds), representing a period of time until which the
+     * association was valid
+     * @param compromised can be set to true to inform that the disassociation is made because of compromission of the
+     * `delegate` account
+     */
     function revokeDelegate(
         address identity,
         bytes32 delegateType,
@@ -139,6 +248,21 @@ interface IDIDRegistry {
         bool compromised
     ) external;
 
+    /**
+     * @dev The same as `revokeDelegate` method but rather than directly signing the transaction it is signed by any account but
+     * the main intention is presented alongside a signature (with params v,r,s) which is used to verify that the signer (who generated v,r,s)
+     * is authorized and that the intention is valid.
+     * @param identity the main account representing a unique idenfier
+     * @param sigV The `v` param after signing following ecdsa algorithm
+     * @param sigR The `r` param after signing following ecdsa algorithm
+     * @param sigS The `s` param after signing following ecdsa algorithm
+     * @param delegateType the type of delegate associated to `delegate` for `identity`
+     * @param delegate the account assigned as a delegate
+     * @param revokeDeltaTime number, 10 digit unix timestamp (in seconds), representing a period of time until which the
+     * association was valid
+     * @param compromised can be set to true to inform that the disassociation is made because of compromission of the
+     * `delegate` account
+     */
     function revokeDelegateSigned(
         address identity,
         uint8 sigV,
@@ -150,12 +274,23 @@ interface IDIDRegistry {
         bool compromised
     ) external;
 
+    /**
+     * @dev `enableKeyRotation` allows a user with more than one backup controller key to rotate such key automatically. Let's say `keyRotationTime`
+     * is 3600 seconds (1 hour) and a particular identity `identity` has 3 backup controller keys; so that means that every hour,
+     * in a deterministic manner, the cotroller privilege will switch to one of the 3 backup controller keys.
+     * @param identity the main account representing a unique idenfier
+     * @param keyRotationTime period of time, in seconds, representing the intervals at which the rey rotation takes place
+     */
     function enableKeyRotation(address identity, uint keyRotationTime) external;
 
+    /**
+     * @dev disables key rotation feature. For the implementation `DIDRegistry` key rotation is disabled by default.
+     * @param identity the main account representing a unique idenfier
+     */
     function disableKeyRotation(address identity) external;
 
     /**
-     * Reurns whether key automatic rotation is enabled. This is, for a set of controllers candidate it is automatically chosen one
+     * Returns whether key automatic rotation is enabled. This is, for a set of controllers candidate it is automatically chosen one
      * for a time window whose value is set at the time of enabling the automatic rotation or a global value set at contract deployment.
      * @param identity main identifier
      */

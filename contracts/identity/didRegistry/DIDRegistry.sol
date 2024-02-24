@@ -382,17 +382,6 @@ contract DIDRegistry is IDIDRegistry, Context {
         return (validity > block.timestamp);
     }
 
-    function expirationAttribute(
-        address identity,
-        bytes32 attributeNameHash,
-        bytes32 attributeValueHash
-    ) public view returns (uint256) {
-        uint validity = attributes[identity][attributeNameHash][
-            attributeValueHash
-        ];
-        return validity;
-    }
-
     function addDelegate(
         address identity,
         address actor,
