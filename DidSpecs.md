@@ -25,9 +25,9 @@ The target system is the one where the DID registry is deployed. In general it c
 
 ### Additional Advantages to ethr and lac DID methods
 
-- backwads revocation time support: With this feature the the controller of a DID can not only revoke from the moment the controller is executing the revocation of a key but also can specify the time in the past at which the key is considered revoked, this is especially useful for cases when it is necessary to revoke a key without affecting all cryptographically verifiable statements with that key but just part of them from some specified time. This opens two main considerations:
+- backwards revocation time support: With this feature the the controller of a DID can not only revoke from the moment the controller is executing the revocation of a key but also can specify the time in the past at which the key is considered revoked, this is especially useful for cases when it is necessary to revoke a key without affecting all cryptographically verifiable statements with that key but just part of them from some specified time. This opens two main considerations:
   - Transparency: Since revocations are logged in the blockchain all changes pertaining any key are perfectly traced and thus transparent.
-  - Key compromission: Imagine the case where a key, associated to a DID for some purpose, was compromised. In such case, the controller behind the DID can fully revoke the key and thus affect all cryptographically verifiable statements made with that key; or to avoid affecting all cryptographically verifiable statements, the controller can make a revocation by specfyfing a time in the past when that key stops being valid. For example if it is identified that the compromission ocurred X days ago, then the controller can revoke the key specifying that all cryptographically verifiable statements made earlier than X days ago are still valid. The natural question here is how a verifier relies that some cryptographically verifiable statement was made earlier than X days ago?, well it is a matter that the verifiable statement should address; for example by using a proof of time that can be anchored to a blockchain so the verifier can be sure of the existence of that verifiable statement at that time.
+  - Key compromise: Imagine the case where a key, associated to a DID for some purpose, was compromised. In such case, the controller behind the DID can fully revoke the key and thus affect all cryptographically verifiable statements made with that key; or to avoid affecting all cryptographically verifiable statements, the controller can make a revocation by specifying a time in the past when that key stops being valid. For example if it is identified that the vulnerability ocurred X days ago, then the controller can revoke the key specifying that all cryptographically verifiable statements made earlier than X days ago are still valid. The natural question here is how a verifier relies that some cryptographically verifiable statement was made earlier than X days ago?, well it is a matter that the verifiable statement should address; for example by using a proof of time that can be anchored to a blockchain so the verifier can be sure of the existence of that verifiable statement at that time.
 - ability to directly resolve the DID registry from the DID
 - ability to handle improvements while maintaining backwards compatibility
 
@@ -45,7 +45,7 @@ base58-specific-identifier = base58(specific-identifier-bytes)
 
 specific-identifier-bytes = payload.push(checksum)
 checksum = hashFunction(payload)[0:4] # first 4 bytes of checksum
-palyload = Array.concat(<did-version-bytes>, <did-type-bytes>, <data-buffer-bytes>)
+payload = Array.concat(<did-version-bytes>, <did-type-bytes>, <data-buffer-bytes>)
 ```
 
 Where:
@@ -69,7 +69,7 @@ Having the capability to define different types and different versions allows to
 
 As long as you have all the required inputs the DID creation process will not require any transaction to the underlying ethereum based network. For example for type ["0001" and version "0001"](./type-version/0001-0001.md) the creation will consist of the following operations as mentioned in its [create](./type-version/0001-0001.md#create) section
 
-A sucessful create operation will render a value like `did:lac1:1iT4aTtv4iMBEvQMtdXtWwK4R3r55paDyDywrGXGUZ4EdeCgkBb4mh1EAHrzY1KwKBia` where initially the DID Document will look like:
+A successful create operation will render a value like `did:lac1:1iT4aTtv4iMBEvQMtdXtWwK4R3r55paDyDywrGXGUZ4EdeCgkBb4mh1EAHrzY1KwKBia` where initially the DID Document will look like:
 
 ```sh
 {
@@ -91,13 +91,13 @@ A sucessful create operation will render a value like `did:lac1:1iT4aTtv4iMBEvQM
 
 Each identifier always has a controller address. By default, it is the same as the identifier address, but the resolver MUST check the read only contract function `identityController(address identity)` on the deployed [DID Registry smart contract](./contracts/identity/didRegistry/).
 
-This controller address MUST be represented in the DID document in the attribute `controller` and MUST be formated following the guidance as specified in the [DID Creation process](./DidSpecs.md#create)
+This controller address MUST be represented in the DID document in the attribute `controller` and MUST be formatted following the guidance as specified in the [DID Creation process](./DidSpecs.md#create)
 
 ##### Enumerating Contract events to build the DID document
 
 To construct a valid DID document, first find all changes in history for an identity:
 
-1. perform an eth_call to changed(address identity) on the [DID Registry smart contract](./contracts/identity/didRegistry/DIDRegistry.sol) to get the latst block where a change occurred.
+1. perform an eth_call to changed(address identity) on the [DID Registry smart contract](./contracts/identity/didRegistry/DIDRegistry.sol) to get the last block where a change occurred.
 2. If result is zero return.
 3. For the given block, filter events where
 
@@ -191,7 +191,7 @@ Example
 - add another key => #vm-2 is added
 - add delegate => #vm-3 is added
 - add service => #service-1 is added
-- revoke first key => #vm-1 gets removed from the DID document; #vm-2 and #delegte-3 remain.
+- revoke first key => #vm-1 gets removed from the DID document; #vm-2 and #delegate-3 remain.
 - add another delegate => #vm-5 is added (earlier revocation is counted as an event)
 - first delegate expires => vm-3 is removed, #vm-5 remains intact
 
@@ -339,7 +339,7 @@ Example: ?versionTime=2021-05-10T17:00:00Z
 
 #### _forTime_ query string parameter
 
-Given a `forTime` query string it **defines a timewindow where all returned keys in the DID document were set to be valid since `forTime` up to the latest change**; in plain terms it returns all coincidences where `forTime =< validTo` for each event `DIDAttributeChanged` and `DIDDelegateChanged` from [DID Registry](./contracts/identity/didRegistry/DIDRegistry.sol)
+Given a `forTime` query string it **defines a time window where all returned keys in the DID document were set to be valid since `forTime` up to the latest change**; in plain terms it returns all coincidences where `forTime =< validTo` for each event `DIDAttributeChanged` and `DIDDelegateChanged` from [DID Registry](./contracts/identity/didRegistry/DIDRegistry.sol)
 
 For this case the `versionId` attribute is a **block range** starting from the minimum block number where events `DIDAttributeChanged` and `DIDDelegateChanged` (from [DID Registry](./contracts/identity/didRegistry/DIDRegistry.sol)) accomplish the condition `forTime =< validTo` up to the last block number where changes were made to the DID document.
 

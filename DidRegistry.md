@@ -9,7 +9,7 @@ Did-Registry stack of contracts are based on [Lacchain did registry](https://git
 - Contracts consider versioning; this helps to better handle changes and improvements in case the logic changes.
 - Closer to ERC-1056 this contract considers:
   - onchain delegates
-- Additionally a flag was added on revocations that indicates whether the attribute/delegate was removed because of compromission or because of a planned change.
+- Additionally a flag was added on revocations that indicates whether the attribute/delegate was removed because of key compromise or because of a planned change.
 
 ## Smart Contract Considerations
 

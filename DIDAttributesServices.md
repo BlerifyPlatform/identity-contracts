@@ -1,7 +1,7 @@
 ## Verification Methods
 
 The name of the attribute added should follow this format:
-`{type}/{controller}/{algotithm}/{enconding}`
+`{type}/{controller}/{algorithm}/{encoding}`
 
 Where `{type}` can be:
 
@@ -26,7 +26,7 @@ The `{algorithm}` can be one of the following in compliance with the W3C specifi
 - **x25519ka**: X25519KeyAgreementKey2019,
 - **ssecp256k1vk**: SchnorrSecp256k1VerificationKey2019
 
-And the `{enconding}` is the Public Key enconding type, the possible values are:
+And the `{encoding}` is the Public Key encoding type, the possible values are:
 
 - **hex**: Hexadecimal -> Produces publicKeyHex field in the DID Document
 - **base64**: Base64 -> Produces publicKeyBase64 field in the DID Document
