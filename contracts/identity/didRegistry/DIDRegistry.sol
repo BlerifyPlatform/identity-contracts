@@ -108,12 +108,13 @@ contract DIDRegistry is IDIDRegistry, Context {
     ) internal onlyController(identity, actor) {
         int controllerIndex = _getControllerIndex(identity, newController);
 
-        if (controllerIndex < 0) {
-            if (controllers[identity].length == 0) {
-                controllers[identity].push(identity);
-            }
-            controllers[identity].push(newController);
+        bool condition1 = identityController(identity) != newController;
+        bool condition2 = controllerIndex < 0;
+        require(condition1 && condition2, "CAE");
+        if (controllers[identity].length == 0) {
+            controllers[identity].push(identity);
         }
+        controllers[identity].push(newController);
         emit DIDControllerAdded(
             identity,
             actor,

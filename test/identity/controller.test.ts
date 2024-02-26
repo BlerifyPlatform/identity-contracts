@@ -80,16 +80,40 @@ describe("Controller", function () {
     }
   });
   it("Should not add an account in controllers if it is a controller already", async function () {
-    const { didRegistry, owner, account1, account2 } =
-      await deployDidRegistry();
+    const { didRegistry, account1, account2 } = await deployDidRegistry();
     const didRegFromAcct1 = (await getArtifact(account1)).attach(
       didRegistry.address
     );
+    if (network.name !== "lacchain") {
+      await expect(
+        didRegFromAcct1.addController(account1.address, account1.address)
+      ).to.be.revertedWith("CAE");
+    } else {
+      try {
+        await didRegistry.addController(account1.address, account1.address);
+        throw new Error("Workaround ..."); // should never reach here since it is expected that issue operation will fail.
+      } catch (e) {}
+    }
     await didRegFromAcct1.addController(account1.address, account2.address);
-    await didRegFromAcct1.addController(account1.address, account2.address);
-    const controllerLength = (
+    let controllerLength = (
       await didRegFromAcct1.getControllers(account1.address)
     ).length;
+    expect(controllerLength).to.equal(2);
+
+    // trying to add a backup controller again
+    if (network.name !== "lacchain") {
+      await expect(
+        didRegFromAcct1.addController(account1.address, account2.address)
+      ).to.be.revertedWith("CAE");
+    } else {
+      try {
+        await didRegistry.addController(account1.address, account1.address);
+        throw new Error("Workaround ..."); // should never reach here since it is expected that issue operation will fail.
+      } catch (e) {}
+    }
+
+    controllerLength = (await didRegFromAcct1.getControllers(account1.address))
+      .length;
     expect(controllerLength).to.equal(2);
   });
   it("Should fail to disable key rotation if it is already disabled", async function () {

@@ -13,3 +13,4 @@
 - EA -> Exceeded Attempts
 - KRAE -> Key Rotation Already Enabled
 - KRAD -> Key Rotation Already Disabled
+- CAE -> Controller Already Exists
