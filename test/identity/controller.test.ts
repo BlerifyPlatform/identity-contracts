@@ -92,4 +92,38 @@ describe("Controller", function () {
     ).length;
     expect(controllerLength).to.equal(2);
   });
+  it("Should fail to disable key rotation if it is already disabled", async function () {
+    const { didRegistry, owner, account1 } = await deployDidRegistry();
+    const didRegFromAcct1 = (await getArtifact(account1)).attach(
+      didRegistry.address
+    );
+    if (network.name !== "lacchain") {
+      await expect(
+        didRegFromAcct1.disableKeyRotation(account1.address)
+      ).to.be.revertedWith("KRAD");
+    } else {
+      try {
+        await didRegistry.addController(account1.address, owner.address);
+        throw new Error("Workaround ..."); // should never reach here since it is expected that issue operation will fail.
+      } catch (e) {}
+    }
+  });
+  it("Should fail to enable key rotation if it is already enabled", async function () {
+    const { didRegistry, owner, account1 } = await deployDidRegistry();
+    const didRegFromAcct1 = (await getArtifact(account1)).attach(
+      didRegistry.address
+    );
+    const keyRotationTime = await didRegFromAcct1.minKeyRotationTime();
+    await didRegFromAcct1.enableKeyRotation(account1.address, keyRotationTime);
+    if (network.name !== "lacchain") {
+      await expect(
+        didRegFromAcct1.enableKeyRotation(account1.address, keyRotationTime)
+      ).to.be.revertedWith("KRAE");
+    } else {
+      try {
+        await didRegistry.addController(account1.address, owner.address);
+        throw new Error("Workaround ..."); // should never reach here since it is expected that issue operation will fail.
+      } catch (e) {}
+    }
+  });
 });

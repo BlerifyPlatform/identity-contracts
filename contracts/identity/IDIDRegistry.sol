@@ -11,14 +11,54 @@ interface IDIDRegistry {
 
     /**
      *
+     * @param identity The main account representing a unique idenfier
+     * @param actor The controller that executed the action on behalf of `identity`.
+     * @param newController The new controller added
+     * @param previousChange indicates the block number at which a previous change was recorded for `identity`
+     */
+    event DIDControllerAdded(
+        address indexed identity,
+        address indexed actor,
+        address indexed newController,
+        uint previousChange
+    );
+
+    /**
+     *
      * @param identity the main account representing a unique idenfier
-     * @param controller the account having full privileges over `identity`
+     * @param actor The controller that executed the action on behalf of `identity`.
+     * @param removedController The controller to be removed
+     * @param previousChange indicates the block number at which a previous change was recorded for `identity`
+     */
+    event DIDControllerRemoved(
+        address indexed identity,
+        address indexed actor,
+        address indexed removedController,
+        uint previousChange
+    );
+
+    /**
+     *
+     * @param identity the main account representing a unique idenfier
+     * @param controller the controller to be the main controller for `identity`.
      * @param previousChange indicates the block number at which a previous change was recorded for `identity`
      */
     event DIDControllerChanged(
         address indexed identity,
         address controller,
         uint previousChange
+    );
+
+    /**
+     *
+     * @param identity The main account representing a unique idenfier
+     * @param actor The controller that executed the action on behalf of `identity`.
+     * @param keyRotationStatus It is `true` when automatic key rotation is enabled, `false` when automatic key rotation is disabled
+     */
+    event KeyRotationStatusChanged(
+        address indexed identity,
+        address indexed actor,
+        bool keyRotationStatus
     );
 
     /**
