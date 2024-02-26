@@ -108,12 +108,20 @@ contract DIDRegistry is IDIDRegistry, Context {
     ) internal onlyController(identity, actor) {
         int controllerIndex = _getControllerIndex(identity, newController);
 
-        if (controllerIndex < 0) {
-            if (controllers[identity].length == 0) {
-                controllers[identity].push(identity);
-            }
-            controllers[identity].push(newController);
+        bool condition1 = identityController(identity) != newController;
+        bool condition2 = controllerIndex < 0;
+        require(condition1 && condition2, "CAE");
+        if (controllers[identity].length == 0) {
+            controllers[identity].push(identity);
         }
+        controllers[identity].push(newController);
+        emit DIDControllerAdded(
+            identity,
+            actor,
+            newController,
+            changed[identity]
+        );
+        changed[identity] = block.number;
     }
 
     function removeController(
@@ -135,6 +143,13 @@ contract DIDRegistry is IDIDRegistry, Context {
         }
         delete controllers[identity][len - 1];
         controllers[identity].pop();
+        emit DIDControllerRemoved(
+            identity,
+            actor,
+            controller,
+            changed[identity]
+        );
+        changed[identity] = block.number;
     }
 
     function changeController(
@@ -158,15 +173,21 @@ contract DIDRegistry is IDIDRegistry, Context {
         uint keyRotationTime
     ) internal onlyController(identity, actor) {
         require(keyRotationTime >= minKeyRotationTime, "VLTGRT");
+        bool currentRotationStatus = configs[identity].automaticRotation;
+        require(!currentRotationStatus, "KRAE");
         configs[identity].automaticRotation = true;
         configs[identity].keyRotationTime = keyRotationTime;
+        emit KeyRotationStatusChanged(identity, actor, true);
     }
 
     function disableKeyRotation(
         address identity,
         address actor
     ) internal onlyController(identity, actor) {
+        bool currentRotationStatus = configs[identity].automaticRotation;
+        require(currentRotationStatus, "KRAD");
         configs[identity].automaticRotation = false;
+        emit KeyRotationStatusChanged(identity, actor, false);
     }
 
     function isKeyRotationEnabled(

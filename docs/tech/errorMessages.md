@@ -11,3 +11,6 @@
 - VLTGRT -> Value Less Than Global Key Rotation Time
 - MNCNA -> Minimum Number of Controllers Not Accomplished
 - EA -> Exceeded Attempts
+- KRAE -> Key Rotation Already Enabled
+- KRAD -> Key Rotation Already Disabled
+- CAE -> Controller Already Exists
