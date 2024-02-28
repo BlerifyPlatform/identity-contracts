@@ -20,12 +20,18 @@ contract DIDRegistry is IDIDRegistry, Context {
 
     uint public minKeyRotationTime;
     uint16 public constant version = 2;
+    mapping(address => bool) public isAccountDeactivated;
 
     constructor(uint _minKeyRotationTime) {
         minKeyRotationTime = _minKeyRotationTime;
     }
 
+    function _validateNoDeactivationAccount(address identity) internal view {
+        require(!isAccountDeactivated[identity], "AWD");
+    }
+
     modifier onlyController(address identity, address actor) {
+        _validateNoDeactivationAccount(identity);
         require(actor == identityController(identity), "NA");
         _;
     }
@@ -46,6 +52,9 @@ contract DIDRegistry is IDIDRegistry, Context {
     function identityController(
         address identity
     ) public view returns (address) {
+        if (isAccountDeactivated[identity]) {
+            return address(0);
+        }
         uint len = controllers[identity].length;
         if (len == 0) return identity;
         if (len == 1) return controllers[identity][0];
@@ -104,7 +113,8 @@ contract DIDRegistry is IDIDRegistry, Context {
     function addController(
         address identity,
         address actor,
-        address newController
+        address newController,
+        uint256 blockChangeBeforeUpdate
     ) internal onlyController(identity, actor) {
         int controllerIndex = _getControllerIndex(identity, newController);
 
@@ -119,15 +129,16 @@ contract DIDRegistry is IDIDRegistry, Context {
             identity,
             actor,
             newController,
-            changed[identity]
+            blockChangeBeforeUpdate
         );
-        changed[identity] = block.number;
+        _setLastBlockChangeIfNeeded(identity);
     }
 
     function removeController(
         address identity,
         address actor,
-        address controller
+        address controller,
+        uint256 blockChangeBeforeUpdate
     ) internal onlyController(identity, actor) {
         require(controllers[identity].length > 1, "ALTCR");
         require(identityController(identity) != controller, "CDMC");
@@ -147,15 +158,16 @@ contract DIDRegistry is IDIDRegistry, Context {
             identity,
             actor,
             controller,
-            changed[identity]
+            blockChangeBeforeUpdate
         );
-        changed[identity] = block.number;
+        _setLastBlockChangeIfNeeded(identity);
     }
 
-    function changeController(
+    function rotateMainController(
         address identity,
         address actor,
-        address newController
+        address newController,
+        uint256 blockChangeBeforeUpdate
     ) internal onlyController(identity, actor) {
         int controllerIndex = _getControllerIndex(identity, newController);
 
@@ -163,8 +175,12 @@ contract DIDRegistry is IDIDRegistry, Context {
 
         setCurrentController(identity, uint(controllerIndex));
 
-        emit DIDControllerChanged(identity, newController, changed[identity]);
-        changed[identity] = block.number;
+        emit DIDControllerChanged(
+            identity,
+            newController,
+            blockChangeBeforeUpdate
+        );
+        _setLastBlockChangeIfNeeded(identity);
     }
 
     function enableKeyRotation(
@@ -200,24 +216,29 @@ contract DIDRegistry is IDIDRegistry, Context {
         address identity,
         address controller
     ) external override {
-        addController(identity, _msgSender(), controller);
+        addController(identity, _msgSender(), controller, changed[identity]);
     }
 
     function removeController(
         address identity,
         address controller
     ) external override {
-        removeController(identity, _msgSender(), controller);
+        removeController(identity, _msgSender(), controller, changed[identity]);
     }
 
-    function changeController(
+    function rotateMainController(
         address identity,
         address newController
     ) external override {
-        changeController(identity, _msgSender(), newController);
+        rotateMainController(
+            identity,
+            _msgSender(),
+            newController,
+            changed[identity]
+        );
     }
 
-    function changeControllerSigned(
+    function rotateMainControllerSigned(
         address identity,
         uint8 sigV,
         bytes32 sigR,
@@ -231,14 +252,30 @@ contract DIDRegistry is IDIDRegistry, Context {
                 this,
                 nonce[identityController(identity)],
                 identity,
-                "changeController",
+                "rotateMainController",
                 newController
             )
         );
-        changeController(
+        rotateMainController(
             identity,
             checkSignature(identity, sigV, sigR, sigS, hash),
-            newController
+            newController,
+            changed[identity]
+        );
+    }
+
+    function enrollNewAndSetMainController(
+        address identity,
+        address newController
+    ) external {
+        address actor = _msgSender();
+        uint256 blockChangeBeforeUpdate = changed[identity];
+        addController(identity, actor, newController, blockChangeBeforeUpdate);
+        rotateMainController(
+            identity,
+            actor,
+            newController,
+            blockChangeBeforeUpdate
         );
     }
 
@@ -247,7 +284,8 @@ contract DIDRegistry is IDIDRegistry, Context {
         address actor,
         bytes memory name,
         bytes memory value,
-        uint validity
+        uint validity,
+        uint256 blockChangeBeforeUpdate
     ) internal onlyController(identity, actor) {
         uint256 currentTime = block.timestamp;
         attributes[identity][keccak256(name)][keccak256(value)] =
@@ -259,10 +297,10 @@ contract DIDRegistry is IDIDRegistry, Context {
             value,
             currentTime + validity,
             currentTime,
-            changed[identity],
+            blockChangeBeforeUpdate,
             false
         );
-        changed[identity] = block.number;
+        _setLastBlockChangeIfNeeded(identity);
     }
 
     function setAttribute(
@@ -271,7 +309,14 @@ contract DIDRegistry is IDIDRegistry, Context {
         bytes memory value,
         uint validity
     ) external override {
-        setAttribute(identity, _msgSender(), name, value, validity);
+        setAttribute(
+            identity,
+            _msgSender(),
+            name,
+            value,
+            validity,
+            changed[identity]
+        );
     }
 
     function setAttributeSigned(
@@ -301,7 +346,8 @@ contract DIDRegistry is IDIDRegistry, Context {
             checkSignature(identity, sigV, sigR, sigS, hash),
             name,
             value,
-            validity
+            validity,
+            changed[identity]
         );
     }
 
@@ -311,7 +357,8 @@ contract DIDRegistry is IDIDRegistry, Context {
         bytes memory name,
         bytes memory value,
         uint256 revokeDeltaTime,
-        bool compromised
+        bool compromised,
+        uint256 blockChangeBeforeUpdate
     ) internal onlyController(identity, actor) {
         bytes32 attributeNameHash = keccak256(name);
         bytes32 attributeValueHash = keccak256(value);
@@ -326,10 +373,10 @@ contract DIDRegistry is IDIDRegistry, Context {
             value,
             revoked,
             currentTime,
-            changed[id],
+            blockChangeBeforeUpdate,
             compromised
         );
-        changed[id] = block.number;
+        _setLastBlockChangeIfNeeded(id);
     }
 
     function revokeAttribute(
@@ -345,7 +392,8 @@ contract DIDRegistry is IDIDRegistry, Context {
             name,
             value,
             revokeDeltaTime,
-            compromised
+            compromised,
+            changed[identity]
         );
     }
 
@@ -373,13 +421,15 @@ contract DIDRegistry is IDIDRegistry, Context {
                 compromised
             )
         );
+        address id = identity;
         revokeAttribute(
             identity,
             checkSignature(identity, sigV, sigR, sigS, hash),
             name,
             value,
             revokeDeltaTime,
-            compromised
+            compromised,
+            changed[id]
         );
     }
 
@@ -408,7 +458,8 @@ contract DIDRegistry is IDIDRegistry, Context {
         address actor,
         bytes32 delegateType,
         address delegate,
-        uint validity
+        uint validity,
+        uint256 blockChangeBeforeUpdate
     ) internal onlyController(identity, actor) {
         uint256 currentTime = block.timestamp;
         delegates[identity][delegateType][delegate] = currentTime + validity;
@@ -418,10 +469,10 @@ contract DIDRegistry is IDIDRegistry, Context {
             delegate,
             currentTime + validity,
             currentTime,
-            changed[identity],
+            blockChangeBeforeUpdate,
             false
         );
-        changed[identity] = block.number;
+        _setLastBlockChangeIfNeeded(identity);
     }
 
     function addDelegate(
@@ -429,8 +480,15 @@ contract DIDRegistry is IDIDRegistry, Context {
         bytes32 delegateType,
         address delegate,
         uint validity
-    ) public {
-        addDelegate(identity, _msgSender(), delegateType, delegate, validity);
+    ) external {
+        addDelegate(
+            identity,
+            _msgSender(),
+            delegateType,
+            delegate,
+            validity,
+            changed[identity]
+        );
     }
 
     function addDelegateSigned(
@@ -441,7 +499,7 @@ contract DIDRegistry is IDIDRegistry, Context {
         bytes32 delegateType,
         address delegate,
         uint validity
-    ) public {
+    ) external {
         bytes32 hash = keccak256(
             abi.encodePacked(
                 bytes1(0x19),
@@ -460,7 +518,8 @@ contract DIDRegistry is IDIDRegistry, Context {
             checkSignature(identity, sigV, sigR, sigS, hash),
             delegateType,
             delegate,
-            validity
+            validity,
+            changed[identity]
         );
     }
 
@@ -470,7 +529,8 @@ contract DIDRegistry is IDIDRegistry, Context {
         bytes32 delegateType,
         address delegate,
         uint256 revokeDeltaTime,
-        bool compromised
+        bool compromised,
+        uint256 blockChangeBeforeUpdate
     ) internal onlyController(identity, actor) {
         uint256 currentTime = block.timestamp;
         // no matter if the attribute was issued before it just sets the revoked time
@@ -483,10 +543,10 @@ contract DIDRegistry is IDIDRegistry, Context {
             delegate,
             expirationTime,
             currentTime,
-            changed[id],
+            blockChangeBeforeUpdate,
             compromised
         );
-        changed[id] = block.number;
+        _setLastBlockChangeIfNeeded(id);
     }
 
     function revokeDelegate(
@@ -495,14 +555,15 @@ contract DIDRegistry is IDIDRegistry, Context {
         address delegate,
         uint256 revokeDeltaTime,
         bool compromised
-    ) public {
+    ) external {
         revokeDelegate(
             identity,
             _msgSender(),
             delegateType,
             delegate,
             revokeDeltaTime,
-            compromised
+            compromised,
+            changed[identity]
         );
     }
 
@@ -515,7 +576,7 @@ contract DIDRegistry is IDIDRegistry, Context {
         address delegate,
         uint256 revokeDeltaTime,
         bool compromised
-    ) public {
+    ) external {
         bytes32 hash = keccak256(
             abi.encodePacked(
                 bytes1(0x19),
@@ -530,13 +591,37 @@ contract DIDRegistry is IDIDRegistry, Context {
                 compromised
             )
         );
+        address id = identity;
         revokeDelegate(
             identity,
             checkSignature(identity, sigV, sigR, sigS, hash),
             delegateType,
             delegate,
             revokeDeltaTime,
-            compromised
+            compromised,
+            changed[id]
         );
+    }
+
+    function _setLastBlockChangeIfNeeded(address account) internal {
+        uint256 blockNumber = block.number;
+        if (changed[account] == blockNumber) {
+            return;
+        }
+        changed[account] = blockNumber;
+    }
+
+    function _deactivateAccount(
+        address identity,
+        address actor,
+        uint256 blockChangeBeforeUpdate
+    ) internal onlyController(identity, actor) {
+        isAccountDeactivated[identity] = true;
+        emit DIDDeactivated(identity, actor, blockChangeBeforeUpdate);
+        _setLastBlockChangeIfNeeded(identity);
+    }
+
+    function deactivateAccount(address identity) external {
+        _deactivateAccount(identity, _msgSender(), changed[identity]);
     }
 }

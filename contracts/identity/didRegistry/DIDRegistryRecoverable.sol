@@ -35,6 +35,7 @@ contract DIDRegistryRecoverable is DIDRegistry, IDIDRegistryRecoverable {
         bytes32 sigS,
         address backupController
     ) public returns (DIDRecoverResult memory result) {
+        _validateNoDeactivationAccount(identity);
         require(controllers[identity].length >= minControllers, "MNCNA");
         bytes32 hash = keccak256(
             abi.encodePacked(
@@ -79,7 +80,12 @@ contract DIDRegistryRecoverable is DIDRegistry, IDIDRegistryRecoverable {
             recoveredKeys[identity].length >=
             controllers[identity].length.div(2).add(1)
         ) {
-            changeController(identity, identity, backupController);
+            rotateMainController(
+                identity,
+                identity,
+                backupController,
+                changed[identity]
+            );
             delete recoveredKeys[identity];
             result.isMainControllerChanged = true;
             result.isVoteAdded = true;
