@@ -351,4 +351,10 @@ interface IDIDRegistry {
     function isKeyRotationEnabled(
         address identity
     ) external view returns (bool);
+
+    /**
+     * Deactivates the DID represented by `identity`. This means any writing method gets permanently disabled
+     * @param identity  the main account representing a unique idenfier
+     */
+    function deactivateAccount(address identity) external;
 }

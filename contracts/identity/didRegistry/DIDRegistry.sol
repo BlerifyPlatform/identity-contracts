@@ -20,12 +20,18 @@ contract DIDRegistry is IDIDRegistry, Context {
 
     uint public minKeyRotationTime;
     uint16 public constant version = 2;
+    mapping(address => bool) public isAccountDeactivated;
 
     constructor(uint _minKeyRotationTime) {
         minKeyRotationTime = _minKeyRotationTime;
     }
 
+    function _validateNoDeactivationAccount(address identity) internal view {
+        require(!isAccountDeactivated[identity], "AWD");
+    }
+
     modifier onlyController(address identity, address actor) {
+        _validateNoDeactivationAccount(identity);
         require(actor == identityController(identity), "NA");
         _;
     }
@@ -46,6 +52,9 @@ contract DIDRegistry is IDIDRegistry, Context {
     function identityController(
         address identity
     ) public view returns (address) {
+        if (isAccountDeactivated[identity]) {
+            return address(0);
+        }
         uint len = controllers[identity].length;
         if (len == 0) return identity;
         if (len == 1) return controllers[identity][0];
@@ -600,5 +609,16 @@ contract DIDRegistry is IDIDRegistry, Context {
             return;
         }
         changed[account] = blockNumber;
+    }
+
+    function _deactivateAccount(
+        address identity,
+        address actor
+    ) internal onlyController(identity, actor) {
+        isAccountDeactivated[identity] = true;
+    }
+
+    function deactivateAccount(address identity) external {
+        _deactivateAccount(identity, _msgSender());
     }
 }

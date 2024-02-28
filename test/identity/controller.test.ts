@@ -201,4 +201,32 @@ describe("Controller", function () {
       } catch (e) {}
     }
   });
+
+  it("Should revoke a DID", async function () {
+    const { didRegistry, account1 } = await deployDidRegistry();
+    const didRegFromAcct1 = (await getArtifact(account1)).attach(
+      didRegistry.address
+    );
+    await didRegFromAcct1.deactivateAccount(account1.address);
+    const currentController = await didRegFromAcct1.identityController(
+      account1.address
+    );
+    expect(currentController).to.be.equal(ethers.constants.AddressZero);
+    if (network.name !== "lacchain") {
+      await expect(
+        didRegFromAcct1.enrollNewAndSetMainController(
+          account1.address,
+          account1.address
+        )
+      ).to.be.revertedWith("AWD");
+    } else {
+      try {
+        didRegFromAcct1.enrollNewAndSetMainController(
+          account1.address,
+          account1.address
+        );
+        throw new Error("Workaround ..."); // should never reach here since it is expected that issue operation will fail.
+      } catch (e) {}
+    }
+  });
 });

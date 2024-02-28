@@ -208,10 +208,10 @@ These functions will trigger the respective Ethereum events which are used to bu
 To revoke a DID, the controller of the DID needs to be set to 0x0. Although, 0x0 is a valid Ethereum address, this will indicate the identity has no controller which is a common approach for invalidation.
 
 ```sh
-changeController(address identity, '0x0');
+deactivateAccount(address identity);
 ```
 
-If there is any other changes to the DID document after such a change, all preexisting keys and services will be considered revoked.
+No more changes will be added to the DID Registry.
 
 If the intention is to revoke all the signatures corresponding to the DID, this option MUST be used.
 
