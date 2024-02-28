@@ -79,7 +79,12 @@ contract DIDRegistryRecoverable is DIDRegistry, IDIDRegistryRecoverable {
             recoveredKeys[identity].length >=
             controllers[identity].length.div(2).add(1)
         ) {
-            changeController(identity, identity, backupController);
+            rotateMainController(
+                identity,
+                identity,
+                backupController,
+                changed[identity]
+            );
             delete recoveredKeys[identity];
             result.isMainControllerChanged = true;
             result.isVoteAdded = true;

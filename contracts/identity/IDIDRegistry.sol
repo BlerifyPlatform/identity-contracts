@@ -134,10 +134,13 @@ interface IDIDRegistry {
      * @param identity the main account representing a unique idenfier
      * @param newController Candidate to be the current main controller
      */
-    function changeController(address identity, address newController) external;
+    function rotateMainController(
+        address identity,
+        address newController
+    ) external;
 
     /**
-     * @dev The same as `changeController` method but rather than directly signing the transaction it is signed by any account but
+     * @dev The same as `rotateMainController` method but rather than directly signing the transaction it is signed by any account but
      * the main intention is presented alongside a signature (with params v,r,s) which is used to verify that the signer (who generated v,r,s)
      * is authorized and that the intention is valid.
      * @param identity the main account representing a unique idenfier
@@ -146,11 +149,22 @@ interface IDIDRegistry {
      * @param sigS The `s` param after signing following ecdsa algorithm
      * @param newController Candidate to be the current main controller
      */
-    function changeControllerSigned(
+    function rotateMainControllerSigned(
         address identity,
         uint8 sigV,
         bytes32 sigR,
         bytes32 sigS,
+        address newController
+    ) external;
+
+    /**
+     * @dev This method not only adds `newController` in the set of backup controllers but also sets such account as the main controller.
+     * Reverts if `newController` already exists
+     * @param identity the main account representing a unique idenfier
+     * @param newController Candidate to be the current main controller
+     */
+    function enrollNewAndSetMainController(
+        address identity,
         address newController
     ) external;
 

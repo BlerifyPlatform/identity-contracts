@@ -56,7 +56,7 @@ describe("Controller", function () {
       didRegistry.address
     );
     await didRegFromAcct1.addController(account1.address, account2.address);
-    const tx = await didRegFromAcct1.changeController(
+    const tx = await didRegFromAcct1.rotateMainController(
       account1.address,
       account2.address
     );
@@ -146,6 +146,57 @@ describe("Controller", function () {
     } else {
       try {
         await didRegistry.addController(account1.address, owner.address);
+        throw new Error("Workaround ..."); // should never reach here since it is expected that issue operation will fail.
+      } catch (e) {}
+    }
+  });
+
+  it("Should enrol a new account and set it as the main controller ", async function () {
+    const { didRegistry, account1, account2 } = await deployDidRegistry();
+    const didRegFromAcct1 = (await getArtifact(account1)).attach(
+      didRegistry.address
+    );
+    const result = await didRegFromAcct1.enrollNewAndSetMainController(
+      account1.address,
+      account2.address
+    );
+    expect(result)
+      .to.emit(didRegFromAcct1, "DIDControllerAdded")
+      .withArgs(account1.address, account1.address, account2.address, 0);
+    expect(result)
+      .to.emit(didRegFromAcct1, "DIDControllerChanged")
+      .withArgs(account1.address, account2.address, 0);
+    expect(await didRegFromAcct1.identityController(account1.address)).to.equal(
+      account2.address
+    );
+    const controllers = await didRegFromAcct1.getControllers(account1.address);
+    expect(controllers.length).to.equal(2);
+    const isController = controllers.find((el) => el === account2.address);
+    expect(isController).not.be.undefined;
+  });
+  it("Should fail to enrol and add  when controller already exists", async function () {
+    const { didRegistry, account1, account2 } = await deployDidRegistry();
+    const didRegFromAcct1 = (await getArtifact(account1)).attach(
+      didRegistry.address
+    );
+    await didRegFromAcct1.enrollNewAndSetMainController(
+      account1.address,
+      account2.address
+    );
+
+    const didRegFromAcct2 = (await getArtifact(account2)).attach(
+      didRegistry.address
+    );
+    if (network.name !== "lacchain") {
+      await expect(
+        didRegFromAcct2.enrollNewAndSetMainController(
+          account1.address,
+          account1.address
+        )
+      ).to.be.revertedWith("CAE");
+    } else {
+      try {
+        await didRegFromAcct2.addController(account1.address, account1.address);
         throw new Error("Workaround ..."); // should never reach here since it is expected that issue operation will fail.
       } catch (e) {}
     }
