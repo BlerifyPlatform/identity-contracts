@@ -50,6 +50,17 @@ interface IDIDRegistry {
     );
 
     /**
+     * Event emitted when a DID is deactivated
+     * @param identity the main account representing a unique idenfier
+     * @param actor The controller that executed the action on behalf of `identity`.
+     */
+    event DIDDeactivated(
+        address indexed identity,
+        address actor,
+        uint256 previousChange
+    );
+
+    /**
      *
      * @param identity The main account representing a unique idenfier
      * @param actor The controller that executed the action on behalf of `identity`.
@@ -353,7 +364,7 @@ interface IDIDRegistry {
     ) external view returns (bool);
 
     /**
-     * Deactivates the DID represented by `identity`. This means any writing method gets permanently disabled
+     * Deactivates the DID represented by `identity`. This means any writing method gets permanently disabled for such DID
      * @param identity  the main account representing a unique idenfier
      */
     function deactivateAccount(address identity) external;

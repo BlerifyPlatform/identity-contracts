@@ -131,7 +131,7 @@ contract DIDRegistry is IDIDRegistry, Context {
             newController,
             blockChangeBeforeUpdate
         );
-        setLastBlockChangeIfNeeded(identity);
+        _setLastBlockChangeIfNeeded(identity);
     }
 
     function removeController(
@@ -160,7 +160,7 @@ contract DIDRegistry is IDIDRegistry, Context {
             controller,
             blockChangeBeforeUpdate
         );
-        setLastBlockChangeIfNeeded(identity);
+        _setLastBlockChangeIfNeeded(identity);
     }
 
     function rotateMainController(
@@ -180,7 +180,7 @@ contract DIDRegistry is IDIDRegistry, Context {
             newController,
             blockChangeBeforeUpdate
         );
-        setLastBlockChangeIfNeeded(identity);
+        _setLastBlockChangeIfNeeded(identity);
     }
 
     function enableKeyRotation(
@@ -300,7 +300,7 @@ contract DIDRegistry is IDIDRegistry, Context {
             blockChangeBeforeUpdate,
             false
         );
-        setLastBlockChangeIfNeeded(identity);
+        _setLastBlockChangeIfNeeded(identity);
     }
 
     function setAttribute(
@@ -376,7 +376,7 @@ contract DIDRegistry is IDIDRegistry, Context {
             blockChangeBeforeUpdate,
             compromised
         );
-        setLastBlockChangeIfNeeded(id);
+        _setLastBlockChangeIfNeeded(id);
     }
 
     function revokeAttribute(
@@ -472,7 +472,7 @@ contract DIDRegistry is IDIDRegistry, Context {
             blockChangeBeforeUpdate,
             false
         );
-        setLastBlockChangeIfNeeded(identity);
+        _setLastBlockChangeIfNeeded(identity);
     }
 
     function addDelegate(
@@ -546,7 +546,7 @@ contract DIDRegistry is IDIDRegistry, Context {
             blockChangeBeforeUpdate,
             compromised
         );
-        setLastBlockChangeIfNeeded(id);
+        _setLastBlockChangeIfNeeded(id);
     }
 
     function revokeDelegate(
@@ -603,7 +603,7 @@ contract DIDRegistry is IDIDRegistry, Context {
         );
     }
 
-    function setLastBlockChangeIfNeeded(address account) internal {
+    function _setLastBlockChangeIfNeeded(address account) internal {
         uint256 blockNumber = block.number;
         if (changed[account] == blockNumber) {
             return;
@@ -613,12 +613,15 @@ contract DIDRegistry is IDIDRegistry, Context {
 
     function _deactivateAccount(
         address identity,
-        address actor
+        address actor,
+        uint256 blockChangeBeforeUpdate
     ) internal onlyController(identity, actor) {
         isAccountDeactivated[identity] = true;
+        emit DIDDeactivated(identity, actor, blockChangeBeforeUpdate);
+        _setLastBlockChangeIfNeeded(identity);
     }
 
     function deactivateAccount(address identity) external {
-        _deactivateAccount(identity, _msgSender());
+        _deactivateAccount(identity, _msgSender(), changed[identity]);
     }
 }
