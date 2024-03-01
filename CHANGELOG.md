@@ -7,10 +7,14 @@
 - Set contract License to Apache-2.0
 - Add unit tests
 - Reduce error message length in contracts
-- remove hashin operation on `delegateType` parameter since it of 32 bytes length already.
 - fix nonce verification in DIDRegistryRecoverable `recover` method.
 - Improve DIDRegistryRecoverable `recover` method response
 - return identity address itself when there are no additional backup controllers set.
+
+#### Bug Fixes
+
+- Fix: UpdateBaseRelayRecipient `_msgSender()` method
+- remove hashing operation on `delegateType` parameter since it of 32 bytes length already.
 
 ## 0.0.1
 
