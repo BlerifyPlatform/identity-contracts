@@ -21,14 +21,23 @@ abstract contract BaseRelayRecipient {
      * should be used in the contract anywhere instead of msg.sender
      */
     function _msgSender() internal view virtual returns (address sender) {
-        bytes memory bytesSender;
-        bool success;
-        (success, bytesSender) = trustedForwarder.staticcall(
-            abi.encodeWithSignature("getMsgSender()")
+        bytes memory bytesRelayHub;
+        bool s;
+        (s, bytesRelayHub) = trustedForwarder.staticcall(
+            abi.encodeWithSignature("getRelayHub()")
         );
+        require(s, "SCF");
 
-        require(success, "SCF");
+        if (msg.sender == abi.decode(bytesRelayHub, (address))) {
+            bytes memory bytesSender;
+            (s, bytesSender) = trustedForwarder.staticcall(
+                abi.encodeWithSignature("getMsgSender()")
+            );
+            require(s, "SCF");
 
-        return abi.decode(bytesSender, (address));
+            return abi.decode(bytesSender, (address));
+        } else {
+            return msg.sender;
+        }
     }
 }
