@@ -12,3 +12,6 @@ cache
 artifacts
 hardhat.config.ts
 
+
+# code editor
+.vscode/settings.json

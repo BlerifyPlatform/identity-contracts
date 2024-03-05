@@ -28,7 +28,7 @@ contract DIDRegistryRecoverable is DIDRegistry, IDIDRegistryRecoverable {
     mapping(address => uint) public failedAttempts;
     mapping(address => uint) public lastAttempt;
 
-    function recover(
+    function recoverSigned(
         address identity,
         uint8 sigV,
         bytes32 sigR,
@@ -48,9 +48,24 @@ contract DIDRegistryRecoverable is DIDRegistry, IDIDRegistryRecoverable {
                 backupController
             )
         );
+        nonce[backupController]++;
         address signer = ecrecover(hash, sigV, sigR, sigS);
         require(signer == backupController, "IS");
+        return _recover(identity, backupController);
+    }
 
+    function recover(
+        address identity
+    ) external returns (DIDRecoverResult memory result) {
+        _validateNoDeactivationAccount(identity);
+        return _recover(identity, _msgSender());
+    }
+
+    function _recover(
+        address identity,
+        address backupController
+    ) private returns (DIDRecoverResult memory result) {
+        require(controllers[identity].length >= minControllers, "MNCNA");
         require(
             failedAttempts[identity] < maxAttempts ||
                 block.timestamp - lastAttempt[identity] > resetSeconds,
