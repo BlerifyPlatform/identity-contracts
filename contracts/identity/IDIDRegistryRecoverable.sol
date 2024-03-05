@@ -9,9 +9,7 @@ interface IDIDRegistryRecoverable {
     }
 
     /**
-     * @dev For a group of already set backup controllers, it must happen that 50% of them have voted to add one of them as the new main controller
-     * The last backup controller taking submitting the intention whose vote reaches the 50% +1 is the one that gets automatically chosen as the
-     * new main controller
+     * @dev The same as `recover` but for this method, the backup controller sends their intention wrapped into a metatransaction.
      * Recovery is not possible when the account is deactivated
      * @param identity The main identity to recover control
      * @param sigV 'v' param in ecrecover
@@ -19,11 +17,22 @@ interface IDIDRegistryRecoverable {
      * @param sigS 's' param in ecrecover
      * @param backupController The address of the backup controller who created v,r,s
      */
-    function recover(
+    function recoverSigned(
         address identity,
         uint8 sigV,
         bytes32 sigR,
         bytes32 sigS,
         address backupController
+    ) external returns (DIDRecoverResult memory result);
+
+    /**
+     * @dev For a group of already set backup controllers, it must happen that 50% of them have voted to add one of them as the new main controller
+     * The last backup controller taking submitting the intention whose vote reaches the 50% +1 is the one that gets automatically chosen as the
+     * new main controller
+     * Recovery is not possible when the account is deactivated
+     * @param identity The main identity to recover control
+     */
+    function recover(
+        address identity
     ) external returns (DIDRecoverResult memory result);
 }

@@ -103,11 +103,11 @@ describe("Recovery", function () {
     const { v, r, s } = ethers.utils.splitSignature(signedMessage);
     if (network.name !== "lacchain") {
       await expect(
-        didRegFromAcct1.recover(account1.address, v, r, s, signer.address)
+        didRegFromAcct1.recoverSigned(account1.address, v, r, s, signer.address)
       ).to.be.revertedWith("MNCNA");
     } else {
       try {
-        await didRegFromAcct1.recover(
+        await didRegFromAcct1.recoverSigned(
           account1.address,
           v,
           r,
@@ -143,11 +143,17 @@ describe("Recovery", function () {
 
     if (network.name !== "lacchain") {
       await expect(
-        didRegFromAcct1.recover(owner.address, v, r, s, account2.address)
+        didRegFromAcct1.recoverSigned(owner.address, v, r, s, account2.address)
       ).to.be.revertedWith("IS");
     } else {
       try {
-        await didRegFromAcct1.recover(owner.address, v, r, s, account2.address);
+        await didRegFromAcct1.recoverSigned(
+          owner.address,
+          v,
+          r,
+          s,
+          account2.address
+        );
         throw new Error("Workaround ...");
       } catch (e) {}
     }
@@ -175,7 +181,7 @@ describe("Recovery", function () {
     const signingKey = signer._signingKey;
     const { v, r, s } = signingKey().signDigest(messageDigest);
 
-    const result = await didRegFromAcct1.callStatic.recover(
+    const result = await didRegFromAcct1.callStatic.recoverSigned(
       owner.address,
       v,
       r,
@@ -185,7 +191,7 @@ describe("Recovery", function () {
     expect(result.isVoteAdded).to.be.false;
   });
 
-  it("Should get successful vote added after valid params are presented", async function () {
+  it("Should get successful vote added after valid params are presented to `recoverSigned` method", async function () {
     const { didRegistry, owner, account1 } =
       await deployDidRegistryRecoverable();
     const didRegFromAcct1 = (await getArtifact(account1)).attach(
@@ -202,14 +208,20 @@ describe("Recovery", function () {
       signer1,
       didRegistry
     );
-    await didRegFromAcct1.recover(owner.address, v, r, s, signer1.address);
+    await didRegFromAcct1.recoverSigned(
+      owner.address,
+      v,
+      r,
+      s,
+      signer1.address
+    );
     // signer 2 votes and gets elected
     let signature2 = await preparePayloadVote(
       owner.address,
       signer2,
       didRegistry
     );
-    const result = await didRegFromAcct1.callStatic.recover(
+    const result = await didRegFromAcct1.callStatic.recoverSigned(
       owner.address,
       signature2.v,
       signature2.r,
@@ -220,13 +232,33 @@ describe("Recovery", function () {
     expect(result.isMainControllerChanged).to.be.true;
   });
 
+  it("Should get successful vote added after valid params are presented to `recover` method", async function () {
+    const { didRegistry, owner, account1, account2 } =
+      await deployDidRegistryRecoverable();
+
+    await didRegistry.addController(owner.address, account1.address);
+    await didRegistry.addController(owner.address, account2.address);
+    // signer 1 votes:
+    const didRegFromAcct1 = (await getArtifact(account1)).attach(
+      didRegistry.address
+    );
+    await didRegFromAcct1.recover(owner.address);
+    // signer 2 votes and gets elected
+    const didRegFromAcct2 = (await getArtifact(account2)).attach(
+      didRegistry.address
+    );
+    const result = await didRegFromAcct2.callStatic.recover(owner.address);
+    expect(result.isVoteAdded).to.be.true;
+    expect(result.isMainControllerChanged).to.be.true;
+  });
+
   async function vote(
     identity: string,
     signer: Wallet,
     didRegistry: DIDRegistryRecoverable | DIDRegistryRecoverableGM
   ) {
     let { v, r, s } = await preparePayloadVote(identity, signer, didRegistry);
-    await didRegistry.recover(identity, v, r, s, signer.address);
+    await didRegistry.recoverSigned(identity, v, r, s, signer.address);
   }
 
   async function preparePayloadVote(

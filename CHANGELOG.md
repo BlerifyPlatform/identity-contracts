@@ -15,6 +15,7 @@
 
 - Fix: UpdateBaseRelayRecipient `_msgSender()` method
 - remove hashing operation on `delegateType` parameter since it of 32 bytes length already.
+- fix: Increment nonce when sending signed recover transaction
 
 ## 0.0.1
 
