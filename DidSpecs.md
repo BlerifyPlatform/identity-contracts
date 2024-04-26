@@ -64,6 +64,8 @@ Having the capability to define different types and different versions allows to
 
 [DID registry](./contracts/identity/didRegistry/DIDRegistry.sol)
 
+The DID Registry holds its own control of versions. Each DID type-version defines the didRegistryVersions it supports. [For example for type 1 version 1 the supported contract versions are](./type-version/0001-0001.md#supported-did-registry-smart-contract-versions)
+
 ### CRUD Operation Definitions
 
 #### Create

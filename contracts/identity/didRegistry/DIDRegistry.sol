@@ -19,7 +19,7 @@ contract DIDRegistry is IDIDRegistry, Context {
     mapping(address => uint) public nonce;
 
     uint public minKeyRotationTime;
-    uint16 public constant version = 2;
+    uint16 public constant version = 260; //v 2.6.0
     mapping(address => bool) public isAccountDeactivated;
 
     constructor(uint _minKeyRotationTime) {
