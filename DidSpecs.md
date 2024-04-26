@@ -30,6 +30,7 @@ The target system is the one where the DID registry is deployed. In general it c
   - Key compromise: Imagine a scenario where a key, associated to a DID for some purpose, was compromised. In such case, the controller behind the DID can fully revoke the key and thus affect all cryptographically verifiable statements made with that key; or to avoid affecting all cryptographically verifiable statements, the controller can make a revocation by specifying a time in the past when that key stops being valid. For example if it is identified that the vulnerability occurred X days ago, then the controller can revoke the key specifying that all cryptographically verifiable statements made earlier than X days ago are still valid. The natural question here is how a verifier relies that some cryptographically verifiable statement was made earlier than X days ago?, well it is an issue that the verifiable statement should address; for example, by using a proof of time that can be anchored to a blockchain so the verifier can be sure of the existence of that verifiable statement at that time.
 - ability to directly resolve the DID registry from the DID
 - ability to handle improvements while maintaining backwards compatibility
+- ability to migrate to another DID by using [alsoKnownAs](https://www.w3.org/ns/did/#properties) attribute
 
 ### DID Method Name
 
@@ -62,6 +63,8 @@ Having the capability to define different types and different versions allows to
 ### Underlying DID Registry
 
 [DID registry](./contracts/identity/didRegistry/DIDRegistry.sol)
+
+The DID Registry holds its own control of versions. Each DID type-version defines the didRegistryVersions it supports. [For example for type 1 version 1 the supported contract versions are](./type-version/0001-0001.md#supported-did-registry-smart-contract-versions)
 
 ### CRUD Operation Definitions
 
@@ -235,6 +238,27 @@ The DID resolution result for a deactivated DID has the following shape:
 }
 ```
 
+### Associating multiple identifiers to a subject (alsoKnownAs)
+
+A DID Document derived from `LAC1` may have more than one [alsoKnownAs property](https://www.w3.org/TR/did-core/#also-known-as). Such association requires passing to the method `addAKAIdentifier` a validity time for the linkage between the represented identity and the alsoKnownAs identifier.
+
+```javascript
+function addAKAIdentifier(
+        address identity,
+        string memory akaId,
+        uint256 validity
+    )
+```
+
+Removing a alsoKnownAs identifier from the subject is possible with the method `removeAKAIdentifier`
+
+```javascript
+function removeAKAIdentifier(
+        address identity,
+        string memory akaId
+    )
+```
+
 ### Security considerations of DID versioning
 
 Applications MUST take precautions when using versioned DID URIs. If a key is compromised and revoked then it can still be used to issue signatures on behalf of the "older" DID URI. The use of versioned DID URIs is only recommended in some limited situations where the timestamp of signatures can also be verified, where malicious signatures can be easily revoked, and where applications can afford to check for these explicit revocations of either keys or signatures. Wherever versioned DIDs are in use, it SHOULD be made obvious to users that they are dealing with potentially revoked data.
@@ -320,7 +344,7 @@ If there are any events after that block that mutate the DID, the earliest of th
 - `nextVersionId` MUST be the block number of the next update to the DID document.
 - `nextUpdate` MUST be the ISO date string of the block time of the next update (without sub-second resolution). In the `DIDAttributeChanged` and `DIDDelegateChanged` it is the `changeTime` attribute.
 
-In case the DID has had updates prior to or included in the block number correspondent to the mapped `versionTime`, the `updated` and `versionId` properties of the didDocumentMetadata MUST correspond to the latest block prior to the `verstionTime` query string param.
+In case the DID has had updates prior to or included in the block number correspondent to the mapped `versionTime`, the `updated` and `versionId` properties of the didDocumentMetadata MUST correspond to the latest block prior to the `versionTime` query string param.
 
 Any timestamp comparisons of validTo fields of the event history MUST be done against the timestamp block number mapped from`versionTime` or otherwise the prior nearest block timestamp to `versionTime` where a change occurred.
 

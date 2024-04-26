@@ -10,6 +10,25 @@ interface IDIDRegistry {
     }
 
     /**
+     * @dev Emitted event when ak alsoKnownAs identifier (akaId) is added or removed
+     * if `validTo` is greater than `changeTime` akaId is added otherwise removed.
+     * @param identity The main account representing a unique idenfier
+     * @param actor The controller that executed the action on behalf of `identity`.
+     * @param akaId RFC3986 compliant identifier
+     * @param validTo number representing 10 digit unix timestamp (in seconds) for which the association/disassociation will be/was valid
+     * @param changeTime the time at which the association/disassociation is made, typically block.timestamp
+     * @param previousChange indicates the block number at which a previous change was recorded for `identity`
+     */
+    event AKAChanged(
+        address indexed identity,
+        address indexed actor,
+        string akaId,
+        uint validTo,
+        uint changeTime,
+        uint previousChange
+    );
+
+    /**
      *
      * @param identity The main account representing a unique idenfier
      * @param actor The controller that executed the action on behalf of `identity`.
@@ -368,4 +387,26 @@ interface IDIDRegistry {
      * @param identity  the main account representing a unique idenfier
      */
     function deactivateAccount(address identity) external;
+
+    /**
+     * @dev Allows adding another identifier to `ìdentity`. The main intention of doing this is for DID migration purposes
+     * @param identity the main account representing a unique idenfier
+     * @param akaId RFC3986 compliant identifier
+     * @param validity number, 10 digit unix timestamp (in seconds), representing a period of time for which the association will be valid
+     */
+    function addAKAIdentifier(
+        address identity,
+        string memory akaId,
+        uint256 validity
+    ) external;
+
+    /**
+     * @dev Removes an `akaId` identifier
+     * @param identity the main account representing a unique idenfier
+     * @param akaId RFC3986 compliant identifier
+     */
+    function removeAKAIdentifier(
+        address identity,
+        string memory akaId
+    ) external;
 }

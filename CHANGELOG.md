@@ -1,5 +1,10 @@
 # Changelog
 
+### 2.6.0
+
+- feat: Add alsoKnownAs support
+- handles version numbering following x.y.z
+
 ### 0.0.2
 
 - Add LAC1 DID Specification
