@@ -624,4 +624,58 @@ contract DIDRegistry is IDIDRegistry, Context {
     function deactivateAccount(address identity) external {
         _deactivateAccount(identity, _msgSender(), changed[identity]);
     }
+
+    function addAKAIdentifier(
+        address identity,
+        string memory akaId,
+        uint256 validity
+    ) external {
+        _addAKAIdentifier(identity, _msgSender(), akaId, validity);
+    }
+
+    function _addAKAIdentifier(
+        address identity,
+        address actor,
+        string memory akaId,
+        uint256 validity
+    ) internal onlyController(identity, actor) {
+        uint256 currentTime = block.timestamp;
+        uint256 blockChangeBeforeUpdate = changed[identity];
+        emit AKAChanged(
+            identity,
+            actor,
+            akaId,
+            currentTime + validity,
+            currentTime,
+            blockChangeBeforeUpdate
+        );
+        _setLastBlockChangeIfNeeded(identity);
+    }
+
+    function removeAKAIdentifier(
+        address identity,
+        string memory akaId
+    ) external {
+        _removeAKAIdentifier(identity, _msgSender(), akaId);
+    }
+
+    function _removeAKAIdentifier(
+        address identity,
+        address actor,
+        string memory akaId
+    ) internal onlyController(identity, actor) {
+        uint256 currentTime = block.timestamp;
+        uint256 expirationTime = currentTime;
+        address id = identity;
+        uint256 blockChangeBeforeUpdate = changed[identity];
+        emit AKAChanged(
+            identity,
+            actor,
+            akaId,
+            expirationTime,
+            currentTime,
+            blockChangeBeforeUpdate
+        );
+        _setLastBlockChangeIfNeeded(id);
+    }
 }
