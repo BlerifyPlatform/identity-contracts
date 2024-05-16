@@ -15,3 +15,4 @@
 - KRAD -> Key Rotation Already Disabled
 - CAE -> Controller Already Exists
 - AWD -> Account Was Deactivated
+- CAD -> Controllers Are Deactivated
