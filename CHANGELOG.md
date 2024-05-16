@@ -1,5 +1,9 @@
 # Changelog
 
+### 2.7.0
+
+- feat: Add support to make DID not updatable by removing controllers
+
 ### 2.6.0
 
 - feat: Add alsoKnownAs support

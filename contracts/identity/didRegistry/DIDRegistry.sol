@@ -7,6 +7,8 @@ import "../IDIDRegistry.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 
 contract DIDRegistry is IDIDRegistry, Context {
+    uint8 constant CONTROLLERS_DISABLED_STATUS = 1;
+    uint8 constant DEACTIVATED_ACCOUNT_STATUS = 3;
     using SafeMath for uint256;
 
     mapping(address => address[]) public controllers;
@@ -19,19 +21,43 @@ contract DIDRegistry is IDIDRegistry, Context {
     mapping(address => uint) public nonce;
 
     uint public minKeyRotationTime;
-    uint16 public constant version = 260; //v 2.6.0
-    mapping(address => bool) public isAccountDeactivated;
+    uint16 public constant version = 270; //v 2.7.0
+
+    mapping(address => uint8) public accountStatus; // 0 normal, 1 no controller, 3 deactivated
 
     constructor(uint _minKeyRotationTime) {
         minKeyRotationTime = _minKeyRotationTime;
     }
 
-    function _validateNoDeactivationAccount(address identity) internal view {
-        require(!isAccountDeactivated[identity], "AWD");
+    function isAccountDeactivated(
+        address identity
+    ) public view returns (bool isDeactivated) {
+        isDeactivated = accountStatus[identity] == 3;
+    }
+
+    function areControllersDeactivated(
+        address identity
+    ) public view returns (bool _areControllersDeactivated) {
+        _areControllersDeactivated =
+            accountStatus[identity] == CONTROLLERS_DISABLED_STATUS;
+    }
+
+    function _validateNoDeactivationAccount(uint8 status) internal pure {
+        require(status != DEACTIVATED_ACCOUNT_STATUS, "AWD");
+    }
+
+    function _validateControllersAreNotDisabled(uint8 status) internal pure {
+        require(status != CONTROLLERS_DISABLED_STATUS, "CAD");
+    }
+
+    function _validateAccountValidStatus(address identity) internal view {
+        uint8 status = accountStatus[identity];
+        _validateNoDeactivationAccount(status);
+        _validateControllersAreNotDisabled(status);
     }
 
     modifier onlyController(address identity, address actor) {
-        _validateNoDeactivationAccount(identity);
+        _validateAccountValidStatus(identity);
         require(actor == identityController(identity), "NA");
         _;
     }
@@ -39,6 +65,8 @@ contract DIDRegistry is IDIDRegistry, Context {
     function getControllers(
         address identity
     ) public view returns (address[] memory controllerList) {
+        if (accountStatus[identity] == CONTROLLERS_DISABLED_STATUS)
+            return controllerList;
         controllerList = controllers[identity];
         uint len = controllerList.length;
         if (len == 0) {
@@ -52,7 +80,10 @@ contract DIDRegistry is IDIDRegistry, Context {
     function identityController(
         address identity
     ) public view returns (address) {
-        if (isAccountDeactivated[identity]) {
+        if (
+            areControllersDeactivated(identity) ||
+            isAccountDeactivated(identity)
+        ) {
             return address(0);
         }
         uint len = controllers[identity].length;
@@ -616,13 +647,31 @@ contract DIDRegistry is IDIDRegistry, Context {
         address actor,
         uint256 blockChangeBeforeUpdate
     ) internal onlyController(identity, actor) {
-        isAccountDeactivated[identity] = true;
+        accountStatus[identity] = DEACTIVATED_ACCOUNT_STATUS;
         emit DIDDeactivated(identity, actor, blockChangeBeforeUpdate);
         _setLastBlockChangeIfNeeded(identity);
     }
 
     function deactivateAccount(address identity) external {
         _deactivateAccount(identity, _msgSender(), changed[identity]);
+    }
+
+    function deactivateControllers(address identity) external {
+        _deactivateControllers(identity, _msgSender(), changed[identity]);
+    }
+
+    function _deactivateControllers(
+        address identity,
+        address actor,
+        uint256 blockChangeBeforeUpdate
+    ) internal onlyController(identity, actor) {
+        accountStatus[identity] = CONTROLLERS_DISABLED_STATUS;
+        emit DIDControllersDeactivated(
+            identity,
+            actor,
+            blockChangeBeforeUpdate
+        );
+        _setLastBlockChangeIfNeeded(identity);
     }
 
     function addAKAIdentifier(

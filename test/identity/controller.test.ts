@@ -1,54 +1,26 @@
 import { expect } from "chai";
-import { ethers, network, lacchain } from "hardhat";
+import { ethers, network } from "hardhat";
 import {
-  DIDRegistry,
-  DIDRegistryGM,
   DIDRegistryGM__factory,
   DIDRegistry__factory,
 } from "../../typechain-types";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { GasModelSignerModified } from "../../GasModelModified";
+import { deployDidRegistry, wrapCall } from "../util";
+import { toUtf8Bytes } from "ethers/lib/utils";
+
+export async function getArtifact(
+  signer: SignerWithAddress | GasModelSignerModified
+): Promise<DIDRegistry__factory | DIDRegistryGM__factory> {
+  let Artifact: DIDRegistry__factory | DIDRegistryGM__factory;
+  if (network.name !== "lacchain") {
+    Artifact = await ethers.getContractFactory("DIDRegistry", signer);
+  }
+  Artifact = await ethers.getContractFactory("DIDRegistryGM", signer);
+  return Artifact;
+}
 
 describe("Controller", function () {
-  async function getArtifact(
-    signer: SignerWithAddress | GasModelSignerModified
-  ): Promise<DIDRegistry__factory | DIDRegistryGM__factory> {
-    let Artifact: DIDRegistry__factory | DIDRegistryGM__factory;
-    if (network.name !== "lacchain") {
-      Artifact = await ethers.getContractFactory("DIDRegistry", signer);
-    }
-    Artifact = await ethers.getContractFactory("DIDRegistryGM", signer);
-    return Artifact;
-  }
-  async function deployDidRegistry() {
-    let Artifact: DIDRegistry__factory | DIDRegistryGM__factory;
-    let didRegistry: DIDRegistry | DIDRegistryGM;
-    let owner, account1, account2: SignerWithAddress | GasModelSignerModified;
-    const keyRotationTime = 3600;
-    if (network.name !== "lacchain") {
-      [owner, account1, account2] = await ethers.getSigners();
-      Artifact = await ethers.getContractFactory("DIDRegistry", owner);
-      didRegistry = await Artifact.deploy(keyRotationTime);
-    } else {
-      [owner, account1, account2] = lacchain.getSigners();
-      Artifact = await ethers.getContractFactory("DIDRegistryGM", owner);
-      const instance = await lacchain.deployContract(
-        Artifact,
-        keyRotationTime,
-        lacchain.baseRelayAddress
-      );
-      didRegistry = Artifact.attach(instance.address);
-    }
-
-    return {
-      didRegistry,
-      owner,
-      account1,
-      account2,
-      Artifact,
-    };
-  }
-
   it("Should switch the main controller with one of the registered controllers, on authorized attempt", async function () {
     const { didRegistry, account1, account2, Artifact } =
       await deployDidRegistry();
@@ -229,4 +201,48 @@ describe("Controller", function () {
       } catch (e) {}
     }
   });
+
+  describe("Controllers deactivation", async () => {
+    it("Should deactivate controllers from an identity account", async () => {
+      await deactivateControllers();
+    });
+
+    it("Should not be able to add an attribute after deactivation", async () => {
+      const didRegistry = await deactivateControllers();
+      const bytesName = toUtf8Bytes("name");
+      const bytesValue = toUtf8Bytes("value");
+      const deltaTime = 86400;
+      const identity = await didRegistry.signer.getAddress();
+      const operation = didRegistry.setAttribute(
+        identity,
+        bytesName,
+        bytesValue,
+        deltaTime
+      );
+      if (network.name !== "lacchain") {
+        await expect(operation).to.be.revertedWith("CAD");
+      } else {
+        await wrapCall(operation);
+      }
+    });
+  });
 });
+
+async function deactivateControllers() {
+  const { didRegistry, account1 } = await deployDidRegistry();
+  const didRegFromAcct1 = (await getArtifact(account1)).attach(
+    didRegistry.address
+  );
+  const tx = await didRegFromAcct1.deactivateControllers(account1.address);
+  await tx.wait();
+  const controllers = await didRegFromAcct1.getControllers(account1.address);
+  const areControllersDeactivated =
+    await didRegFromAcct1.areControllersDeactivated(account1.address);
+  const isAccountDeactivated = await didRegFromAcct1.isAccountDeactivated(
+    account1.address
+  );
+  expect(controllers.length).to.equal(0);
+  expect(areControllersDeactivated).to.equal(true);
+  expect(isAccountDeactivated).to.equal(false);
+  return didRegFromAcct1;
+}

@@ -259,6 +259,10 @@ function removeAKAIdentifier(
     )
 ```
 
+### Disabling controllers
+
+A DID "lac1" can be set to have no controllers. This way the DID is not longer updatable. This feature doesn't necessarily mean the DID is deactivated. Once a DID is moved to this state the DID cannot be deactivated.
+
 ### Security considerations of DID versioning
 
 Applications MUST take precautions when using versioned DID URIs. If a key is compromised and revoked then it can still be used to issue signatures on behalf of the "older" DID URI. The use of versioned DID URIs is only recommended in some limited situations where the timestamp of signatures can also be verified, where malicious signatures can be easily revoked, and where applications can afford to check for these explicit revocations of either keys or signatures. Wherever versioned DIDs are in use, it SHOULD be made obvious to users that they are dealing with potentially revoked data.

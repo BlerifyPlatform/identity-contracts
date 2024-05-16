@@ -80,6 +80,17 @@ interface IDIDRegistry {
     );
 
     /**
+     * Event emitted when DID controllers are deactivated, that means the DID is no longer updatable.
+     * @param identity the main account representing a unique idenfier
+     * @param actor The controller that executed the action on behalf of `identity`.
+     */
+    event DIDControllersDeactivated(
+        address indexed identity,
+        address actor,
+        uint256 previousChange
+    );
+
+    /**
      *
      * @param identity The main account representing a unique idenfier
      * @param actor The controller that executed the action on behalf of `identity`.
