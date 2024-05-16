@@ -11,7 +11,7 @@ import { GasModelSignerModified } from "../../GasModelModified";
 import { sleep, wrapCall } from "../util";
 import { ContractReceipt } from "ethers";
 
-describe("Controller", function () {
+describe("Also Known As", function () {
   async function getArtifact(
     signer: SignerWithAddress | GasModelSignerModified
   ): Promise<DIDRegistry__factory | DIDRegistryGM__factory> {

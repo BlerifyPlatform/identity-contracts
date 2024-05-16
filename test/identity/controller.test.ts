@@ -202,7 +202,7 @@ describe("Controller", function () {
     }
   });
 
-  it("Controllers deactivation", async () => {
+  describe("Controllers deactivation", async () => {
     it("Should deactivate controllers from an identity account", async () => {
       await deactivateControllers();
     });
