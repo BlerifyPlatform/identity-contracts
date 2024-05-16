@@ -10,6 +10,7 @@ import {
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { GasModelSignerModified } from "../../GasModelModified";
 import { solidityPack, keccak256, arrayify } from "ethers/lib/utils";
+import { wrapCall } from "../util";
 
 describe("Recovery", function () {
   async function getArtifact(
@@ -252,14 +253,25 @@ describe("Recovery", function () {
     expect(result.isMainControllerChanged).to.be.true;
   });
 
-  async function vote(
-    identity: string,
-    signer: Wallet,
-    didRegistry: DIDRegistryRecoverable | DIDRegistryRecoverableGM
-  ) {
-    let { v, r, s } = await preparePayloadVote(identity, signer, didRegistry);
-    await didRegistry.recoverSigned(identity, v, r, s, signer.address);
-  }
+  it("Should not be able to recover if account has controllers deactivated", async () => {
+    const { didRegistry, owner, account1, account2 } =
+      await deployDidRegistryRecoverable();
+    let tx = await didRegistry.addController(owner.address, account1.address);
+    await tx.wait();
+    await didRegistry.addController(owner.address, account2.address);
+    await tx.wait();
+    const didRegFromAcct1 = (await getArtifact(account1)).attach(
+      didRegistry.address
+    );
+    tx = await didRegistry.deactivateControllers(owner.address);
+    await tx.wait();
+    const operation = didRegFromAcct1.recover(owner.address);
+    if (network.name !== "lacchain") {
+      await expect(operation).to.be.revertedWith("CAD");
+    } else {
+      await wrapCall(operation);
+    }
+  });
 
   async function preparePayloadVote(
     identity: string,

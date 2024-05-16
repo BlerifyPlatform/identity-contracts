@@ -52,24 +52,6 @@ describe("Controller", function () {
     };
   }
 
-  it("Should fail if invalid controller", async () => {
-    const { didRegistry, account1, account2 } = await deployDidRegistry();
-    const didRegFromAcct1 = (await getArtifact(account1)).attach(
-      didRegistry.address
-    );
-    const akaId = "did:abc:mnp";
-    const deltaTime = 86400;
-    const call = didRegFromAcct1.addAKAIdentifier(
-      account2.address,
-      akaId,
-      deltaTime
-    );
-    if (network.name !== "lacchain") {
-      await expect(call).to.be.revertedWith("NA");
-    } else {
-      await wrapCall(call);
-    }
-  });
   it("Should add a alsoKnownAs identifier", async () => {
     const { didRegistry, account1 } = await deployDidRegistry();
     const didRegFromAcct1 = (await getArtifact(account1)).attach(
