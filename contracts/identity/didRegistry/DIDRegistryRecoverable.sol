@@ -35,7 +35,7 @@ contract DIDRegistryRecoverable is DIDRegistry, IDIDRegistryRecoverable {
         bytes32 sigS,
         address backupController
     ) public returns (DIDRecoverResult memory result) {
-        _validateNoDeactivationAccount(identity);
+        _validateAccountValidStatus(identity);
         require(controllers[identity].length >= minControllers, "MNCNA");
         bytes32 hash = keccak256(
             abi.encodePacked(
@@ -57,7 +57,7 @@ contract DIDRegistryRecoverable is DIDRegistry, IDIDRegistryRecoverable {
     function recover(
         address identity
     ) external returns (DIDRecoverResult memory result) {
-        _validateNoDeactivationAccount(identity);
+        _validateAccountValidStatus(identity);
         return _recover(identity, _msgSender());
     }
 
