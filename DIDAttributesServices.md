@@ -13,7 +13,7 @@ Where `{type}` can be:
 - **invo**: for an Invocation Capability Key
 - **svc**: for a Service
 
-The `{controller}` represents the Verification Method controller, and can be any string DID or DID fragment.
+The `{controller}` represents the Verification Method controller, and can be any string representing a DID. Semantically this value points to a DID that controls the specified cryptographic key. Additionally, this value is not necessarily the DID specified in the `id` DID document property
 
 The `{algorithm}` can be one of the following in compliance with the W3C specification https://w3c.github.io/did-spec-registries/:
 
