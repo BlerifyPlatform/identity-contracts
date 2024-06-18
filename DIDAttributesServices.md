@@ -37,6 +37,23 @@ And the `{encoding}` is the Public Key encoding type, the possible values are:
 > **Note:** The `{encoding}` only refers to the key encoding in the resolved DID document.
 > Attribute values sent to the smart contract registry should always be hex encodings of the raw public key data.
 
+
+### Saving Data to the DID Registry
+
+The method to add attributes to the DID Registry  is `setAttribute`; this has the following method signature:
+
+```js
+function setAttribute(
+        address identity,
+        bytes memory name,
+        bytes memory value,
+        uint validity
+    )
+```
+
+To achieve alignment regarding the data being saved, any complex data format such as JSON elements must be canonicalized using [RFC-8785](https://datatracker.ietf.org/doc/html/rfc8785) before adding them as a `value` parameter in the `setAttribute` method.
+
+
 ## Service Endpoints
 
 The name of the attribute should follow this format:
