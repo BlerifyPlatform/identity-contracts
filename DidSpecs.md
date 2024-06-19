@@ -99,7 +99,7 @@ A successful create operation will render a value like `did:lac1:1iT6937zvW4RJxf
 }
 ```
 
-By default the current active controller is a verification method with `authentication` and `assertion` relationships.
+By default the current active controller is added as a verification method with `authentication` and `assertion` relationships.
 
 #### Read
 
@@ -222,7 +222,9 @@ Any verification method other than onchain delegates follows this structure:
 
 ```
 
-- `did` is the `controller` string coming in `name` property ([according to this specification](./DIDAttributesServices.md#verification-methods)) specified in the `DIDAttributeChanged` for the DID Document.
+Where:
+
+- `did` is the `controller` string coming in `name` property ([according to this specification](./DIDAttributesServices.md#verification-methods)) of the `DIDAttributeChanged` smart contract log.
 - vm-identifier is calculated as follows:
   - Convert `did` to utf-8 array: utf8_array_controller
   - Convert the the hex value coming from the retrieved `DIDAttributeChanged` `value` attribute bytes: value_array_value
@@ -234,12 +236,15 @@ Example:
 
 ```js
 {
-"id": "did:lac1:1iT5gtL8winNLChdgSEK57ZoV7H4qDXDUDoALVtNbfDXb3uaD4QTSExWZGrYfdbC4XvA#GsvAUXzoBg1KLM1kvXkZxYsrBg6dYfMegWNmWftBJ2hv",
+"id": "did:lac1:1iT5gtL8winNLChdgSEK57ZoV7H4qDXDUDoALVtNbfDXb3uaD4QTSExWZGrYfdbC4XvA#4LGkasnLfsqWNULhKT1yzz4i2mBQrmgeQB3McKM3x5Wt",
 "type": "EcdsaSecp256k1RecoveryMethod2020",
 "controller": "did:lac1:1iT5gtL8winNLChdgSEK57ZoV7H4qDXDUDoALVtNbfDXb3uaD4QTSExWZGrYfdbC4XvA",
-"blockchainAccountId": "eip155:648540:0x95d7723676AE52E71281Bc6868A05dB843aD8410"
+"publicKeyJwk": {"crv":"P-256","kty":"EC","x":"EfMVtKPj-_7IxvUcgF0YxTtYNLmhALLtl_ikdu90wRk","y":"eAGxKVSJzSid9CJqt8lBBFzBRolOP8HafIYONWHUxTA"}
 }
 ```
+
+In this example `publicKeyJwk` represents the value of the attribute `value` corresponding to a particular `DIDAttributeChanged` log.
+
 
 For onchain delegates, the structure is the following:
 
@@ -275,13 +280,45 @@ Example:
 
 ```
 
+In this example `blockchainAccountId` represents the value of the attribute `value` corresponding to a particular `DIDDelegateChanged` log.
+
+For services, the structure is the following:
+
+```js
+{
+"id": "<did>#<svc-identifier>",
+"type": "<service_type>",
+"serviceEndpoint": "<service_url>"
+}
+```
+
+In this case, the `id` property has the following structure: ${did}#${svc-identifier}; where:
+
+- `did` is the DID identifier coming from the request asking for the DID Document.
+- svc-identifier is calculated as follows:
+  - Convert `type` string, coming in `name` property ([according to this specification](./DIDAttributesServices.md#verification-methods)) of the `DIDAttributeChanged`, to utf-8 array: utf8_array_type
+  - Convert the the hex value coming from the retrieved `DIDAttributeChanged` `value` attribute bytes: value_array_value
+  - concatenate both utf8_array_type and value_array_value: concatenated_value
+  - Compute the keccak256 digest of `concatenated_value`: digest
+  - obtain the base58 representation of `digest`.
+
+Example:
+
+```js
+{
+  "id": "did:lac1:1iT5gtL8winNLChdgSEK57ZoV7H4qDXDUDoALVtNbfDXb3uaD4QTSExWZGrYfdbC4XvA#enpoh49epeEtzeq8TZbu7TatJrQEHmLtBfQZbrhYUci",
+  "type": "LinkedDomains",
+  "serviceEndpoint": "https://auth-svcs.com"
+}
+```
+
+In this example `serviceEndpoint` represents the value of the attribute `value` corresponding to a particular `DIDAttributeChanged` log.
+
 #### Update
 
 The DID Document may be updated by invoking the relevant smart contract functions as defined by the [DID registry](./contracts/identity/didRegistry/DIDRegistry.sol). This includes changes to the account owner, adding delegates and adding additional attributes. Please find a detailed description in the [DID Registry Documentation](./DidRegistry.md)
 
 These functions will trigger the respective Ethereum events which are used to build the DID Document for a given account as described in [Enumerating Contract Events](./DidSpecs.md#enumerating-contract-events-to-build-the-did-document) to build the DID Document.
-
-**Note**: Extending the validity of some attribute/delegate in the DID Registry will create a new input in the DID Document.
 
 #### Delete
 
