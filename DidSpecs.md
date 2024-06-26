@@ -77,21 +77,22 @@ A successful create operation will render a value like `did:lac1:1iT6937zvW4RJxf
 ```sh
 {
   "@context": "https://www.w3.org/ns/did/v1",
-  "id": "did:lac1:1iT6937zvW4RJxfyrxbi3NGtNq7tUMbpsKPEFC5VX3H1xfa8R15aWq7g2X6RZD8gLuQU",
-  "controller": "did:lac1:1iT6937zvW4RJxfyrxbi3NGtNq7tUMbpsKPEFC5VX3H1xfa8R15aWq7g2X6RZD8gLuQU",
+{
+  "id": "did:lac1:4Kx9Qj58rAH7Cnhfx3sCWvc5qT65qtGfwXoYj4MnCsJBEHH4maNJBqAj8fzFDbhu7p2YR",
+  "controller": "did:lac1:4Kx9Qj58rAH7Cnhfx3sCWvc5qT65qtGfwXoYj4MnCsJBEHH4maNJBqAj8fzFDbhu7p2YR",
   "verificationMethod": [
     {
-      id: 'did:lac1:1iT6937zvW4RJxfyrxbi3NGtNq7tUMbpsKPEFC5VX3H1xfa8R15aWq7g2X6RZD8gLuQU#controller',
-      type: 'EcdsaSecp256k1RecoveryMethod2020',
-      controller: 'did:lac1:1iT6937zvW4RJxfyrxbi3NGtNq7tUMbpsKPEFC5VX3H1xfa8R15aWq7g2X6RZD8gLuQU',
-      blockchainAccountId: 'eip155:0x43dE0954a2c83A415d82b9F31705B969b5856003'
+      "id": "did:lac1:4Kx9Qj58rAH7Cnhfx3sCWvc5qT65qtGfwXoYj4MnCsJBEHH4maNJBqAj8fzFDbhu7p2YR#GbinyzS1o2jhiS7vu8mqWyaobLGE8iatXuN8wyAXGVGM",
+      "type": "EcdsaSecp256k1RecoveryMethod2020",
+      "controller": "did:lac1:4Kx9Qj58rAH7Cnhfx3sCWvc5qT65qtGfwXoYj4MnCsJBEHH4maNJBqAj8fzFDbhu7p2YR",
+      "blockchainAccountId": "eip155:648540:0x56dD32c6Bc704FE2eB73f821222Aa299DfA25740"
     }
   ],
   "authentication": [
-    'did:lac1:1iT6937zvW4RJxfyrxbi3NGtNq7tUMbpsKPEFC5VX3H1xfa8R15aWq7g2X6RZD8gLuQU#controller'
+    "did:lac1:4Kx9Qj58rAH7Cnhfx3sCWvc5qT65qtGfwXoYj4MnCsJBEHH4maNJBqAj8fzFDbhu7p2YR#GbinyzS1o2jhiS7vu8mqWyaobLGE8iatXuN8wyAXGVGM"
   ],
   "assertionMethod": [
-    'did:lac1:1iT6937zvW4RJxfyrxbi3NGtNq7tUMbpsKPEFC5VX3H1xfa8R15aWq7g2X6RZD8gLuQU#controller'
+    "did:lac1:4Kx9Qj58rAH7Cnhfx3sCWvc5qT65qtGfwXoYj4MnCsJBEHH4maNJBqAj8fzFDbhu7p2YR#GbinyzS1o2jhiS7vu8mqWyaobLGE8iatXuN8wyAXGVGM"
   ],
   "keyAgreement": [],
   "capabilityInvocation": [],
@@ -99,7 +100,23 @@ A successful create operation will render a value like `did:lac1:1iT6937zvW4RJxf
 }
 ```
 
-By default the current active controller is added as a verification method with `authentication` and `assertion` relationships.
+By default the current active controller is added as a default verification method with `authentication` and `assertion` relationships.
+
+The Id of the default verification method follows the format:
+
+```js
+"id": "<did>#<vm-identifier>",
+```
+
+Where:
+
+- `did` is the decentralized identifier string.
+- vm-identifier is calculated as follows:
+  - Convert `did` to utf-8 array: utf8_array_controller
+  - Convert to bytes the hex value corresponding to the current DID controller (it is an etherum address) retrieved from the underlying DID Registry with the method `getController()`: value_array_value
+  - concatenate both utf8_array_controller and value_array_value: concatenated_value
+  - Compute the keccak256 digest of `concatenated_value`: digest
+  - obtain the base58 representation of `digest`.
 
 #### Read
 
@@ -181,12 +198,11 @@ Example:
 
 ```js
 {
-"id": "did:lac1:1iT5jsMUTRkENt6WspMf5CGJNc9bUxt38urgGGxqaFhrLn4cmsC6XNddWb1pAUfonk33#vm-1",
-"type": "EcdsaSecp256k1RecoveryMethod2020",
-"controller": "did:lac1:1iT5jsMUTRkENt6WspMf5CGJNc9bUxt38urgGGxqaFhrLn4cmsC6XNddWb1pAUfonk33",
-"blockchainAccountId": "eip155:648540:0x95d7723676AE52E71281Bc6868A05dB843aD8410"
+  "id": "did:lac1:4Kx9Qj58rAH7Cnhfx3sCWvc5qT65qtGfwXoYj4MnCsJBEHH4maNJBqAj8fzFDbhu7p2YR#GbinyzS1o2jhiS7vu8mqWyaobLGE8iatXuN8wyAXGVGM",
+  "type": "EcdsaSecp256k1RecoveryMethod2020",
+  "controller": "did:lac1:4Kx9Qj58rAH7Cnhfx3sCWvc5qT65qtGfwXoYj4MnCsJBEHH4maNJBqAj8fzFDbhu7p2YR",
+  "blockchainAccountId": "eip155:648540:0x56dD32c6Bc704FE2eB73f821222Aa299DfA25740"
 }
-
 ```
 
 ##### DID Document versions
@@ -244,7 +260,6 @@ Example:
 ```
 
 In this example `publicKeyJwk` represents the value of the attribute `value` corresponding to a particular `DIDAttributeChanged` log.
-
 
 For onchain delegates, the structure is the following:
 
