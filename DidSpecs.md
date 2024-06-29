@@ -72,21 +72,51 @@ The DID Registry holds its own control of versions. Each DID type-version define
 
 As long as you have all the required inputs the DID creation process will not require any transaction to the underlying ethereum based network. For example for type ["0001" and version "0001"](./type-version/0001-0001.md) the creation will consist of the following operations as mentioned in its [create](./type-version/0001-0001.md#create) section
 
-A successful create operation will render a value like `did:lac1:1iT4aTtv4iMBEvQMtdXtWwK4R3r55paDyDywrGXGUZ4EdeCgkBb4mh1EAHrzY1KwKBia` where initially the DID Document will look like:
+A successful create operation will render a value like `did:lac1:1iT6937zvW4RJxfyrxbi3NGtNq7tUMbpsKPEFC5VX3H1xfa8R15aWq7g2X6RZD8gLuQU` where initially the DID Document will look like:
 
 ```sh
 {
   "@context": "https://www.w3.org/ns/did/v1",
-  "id": "did:lac1:1iT4Zoku28ehvub6qrZtEp8VTCmqAjxqU5wFUBz4qCDyR8RkTa8uPdNc1MfAV7fSLd7i",
-  "controller": "did:lac1:1iT4Zoku28ehvub6qrZtEp8VTCmqAjxqU5wFUBz4qCDyR8RkTa8uPdNc1MfAV7fSLd7i",
-  "verificationMethod": [],
-  "authentication": [],
-  "assertionMethod": [],
+{
+  "id": "did:lac1:4Kx9Qj58rAH7Cnhfx3sCWvc5qT65qtGfwXoYj4MnCsJBEHH4maNJBqAj8fzFDbhu7p2YR",
+  "controller": "did:lac1:4Kx9Qj58rAH7Cnhfx3sCWvc5qT65qtGfwXoYj4MnCsJBEHH4maNJBqAj8fzFDbhu7p2YR",
+  "verificationMethod": [
+    {
+      "id": "did:lac1:4Kx9Qj58rAH7Cnhfx3sCWvc5qT65qtGfwXoYj4MnCsJBEHH4maNJBqAj8fzFDbhu7p2YR#GbinyzS1o2jhiS7vu8mqWyaobLGE8iatXuN8wyAXGVGM",
+      "type": "EcdsaSecp256k1RecoveryMethod2020",
+      "controller": "did:lac1:4Kx9Qj58rAH7Cnhfx3sCWvc5qT65qtGfwXoYj4MnCsJBEHH4maNJBqAj8fzFDbhu7p2YR",
+      "blockchainAccountId": "eip155:648540:0x56dD32c6Bc704FE2eB73f821222Aa299DfA25740"
+    }
+  ],
+  "authentication": [
+    "did:lac1:4Kx9Qj58rAH7Cnhfx3sCWvc5qT65qtGfwXoYj4MnCsJBEHH4maNJBqAj8fzFDbhu7p2YR#GbinyzS1o2jhiS7vu8mqWyaobLGE8iatXuN8wyAXGVGM"
+  ],
+  "assertionMethod": [
+    "did:lac1:4Kx9Qj58rAH7Cnhfx3sCWvc5qT65qtGfwXoYj4MnCsJBEHH4maNJBqAj8fzFDbhu7p2YR#GbinyzS1o2jhiS7vu8mqWyaobLGE8iatXuN8wyAXGVGM"
+  ],
   "keyAgreement": [],
   "capabilityInvocation": [],
   "capabilityDelegation": []
 }
 ```
+
+By default the current active controller is added as a default verification method with `authentication` and `assertion` relationships.
+
+The Id of the default verification method follows the format:
+
+```js
+"id": "<did>#<vm-identifier>",
+```
+
+Where:
+
+- `did` is the decentralized identifier string.
+- vm-identifier is calculated as follows:
+  - Convert `did` to utf-8 array: utf8_array_controller
+  - Convert to bytes the hex value corresponding to the current DID controller (it is an etherum address) retrieved from the underlying DID Registry with the method `getController()`: value_array_value
+  - concatenate both utf8_array_controller and value_array_value: concatenated_value
+  - Compute the keccak256 digest of `concatenated_value`: digest
+  - obtain the base58 representation of `digest`.
 
 #### Read
 
@@ -137,8 +167,7 @@ To construct a valid DID document, first find all changes in history for an iden
 
 ###### Attributes (DIDAttributeChanged)
 
-While any attribute can be emited in the `DIDAttributeChanged`, for the DID document we currently support adding to each of these sections of the DID
-document:
+While any attribute can be emitted in the `DIDAttributeChanged`, for the DID document we currently support adding to each of these sections of the DID Document the following properties:
 
 - [Verification Methods](./DIDAttributesServices.md#verification-methods)
 - [Service Endpoints](./DIDAttributesServices.md#service-endpoints)
@@ -169,12 +198,11 @@ Example:
 
 ```js
 {
-"id": "did:lac1:1iT5jsMUTRkENt6WspMf5CGJNc9bUxt38urgGGxqaFhrLn4cmsC6XNddWb1pAUfonk33#vm-1",
-"type": "EcdsaSecp256k1RecoveryMethod2020",
-"controller": "did:lac1:1iT5jsMUTRkENt6WspMf5CGJNc9bUxt38urgGGxqaFhrLn4cmsC6XNddWb1pAUfonk33",
-"blockchainAccountId": "eip155:648540:0x95d7723676AE52E71281Bc6868A05dB843aD8410"
+  "id": "did:lac1:4Kx9Qj58rAH7Cnhfx3sCWvc5qT65qtGfwXoYj4MnCsJBEHH4maNJBqAj8fzFDbhu7p2YR#GbinyzS1o2jhiS7vu8mqWyaobLGE8iatXuN8wyAXGVGM",
+  "type": "EcdsaSecp256k1RecoveryMethod2020",
+  "controller": "did:lac1:4Kx9Qj58rAH7Cnhfx3sCWvc5qT65qtGfwXoYj4MnCsJBEHH4maNJBqAj8fzFDbhu7p2YR",
+  "blockchainAccountId": "eip155:648540:0x56dD32c6Bc704FE2eB73f821222Aa299DfA25740"
 }
-
 ```
 
 ##### DID Document versions
@@ -183,10 +211,10 @@ Only events with a `validTo` (measured in seconds) greater or equal to the curre
 
 ##### id properties of entries
 
-- Attribute or delegate changes that result in verificationMethod entries MUST set the id ${did}#vm-${eventIndex}.
+- Attribute or delegate changes that result in verificationMethod entries MUST set the id ${did}#${vm-identifier}.
 - Attributes that result in service entries MUST set the id to ${did}#service-${eventIndex}
 
-where eventIndex is the index of the event that modifies that section of the DID document.
+where eventIndex is the index of the event that modifies the section of the DID document partaining services.
 
 Example
 
@@ -198,13 +226,114 @@ Example
 - add another delegate => #vm-5 is added (earlier revocation is counted as an event)
 - first delegate expires => vm-3 is removed, #vm-5 remains intact
 
+Any verification method other than onchain delegates follows this structure:
+
+```js
+{
+"id": "<did>#<vm-identifier>",
+"type": "<type>",
+"controller": "<did>",
+"<publicKeyJwk>": "<key>"
+}
+
+```
+
+Where:
+
+- `did` is the `controller` string coming in `name` property ([according to this specification](./DIDAttributesServices.md#verification-methods)) of the `DIDAttributeChanged` smart contract log.
+- vm-identifier is calculated as follows:
+  - Convert `did` to utf-8 array: utf8_array_controller
+  - Convert the the hex value coming from the retrieved `DIDAttributeChanged` `value` attribute bytes: value_array_value
+  - concatenate both utf8_array_controller and value_array_value: concatenated_value
+  - Compute the keccak256 digest of `concatenated_value`: digest
+  - obtain the base58 representation of `digest`.
+
+Example:
+
+```js
+{
+"id": "did:lac1:1iT5gtL8winNLChdgSEK57ZoV7H4qDXDUDoALVtNbfDXb3uaD4QTSExWZGrYfdbC4XvA#4LGkasnLfsqWNULhKT1yzz4i2mBQrmgeQB3McKM3x5Wt",
+"type": "EcdsaSecp256k1RecoveryMethod2020",
+"controller": "did:lac1:1iT5gtL8winNLChdgSEK57ZoV7H4qDXDUDoALVtNbfDXb3uaD4QTSExWZGrYfdbC4XvA",
+"publicKeyJwk": {"crv":"P-256","kty":"EC","x":"EfMVtKPj-_7IxvUcgF0YxTtYNLmhALLtl_ikdu90wRk","y":"eAGxKVSJzSid9CJqt8lBBFzBRolOP8HafIYONWHUxTA"}
+}
+```
+
+In this example `publicKeyJwk` represents the value of the attribute `value` corresponding to a particular `DIDAttributeChanged` log.
+
+For onchain delegates, the structure is the following:
+
+```js
+{
+"id": "<did>#<vm-identifier>",
+"type": "EcdsaSecp256k1RecoveryMethod2020",
+"controller": "<did>",
+"blockchainAccountId": "eip155:<chainId>:<ethereum_account_address>"
+}
+
+```
+
+In this case, the `id` property has the following structure: ${did}#${vm-identifier}; where:
+
+- `did` is the DID identifier coming from the request asking for the DID Document.
+- vm-identifier is calculated as follows:
+  - Convert `did` to utf-8 array: utf8_array_controller
+  - Convert the the hex value coming from the retrieved `DIDDelegateChanged` `value` attribute bytes: value_array_value
+  - concatenate both utf8_array_controller and value_array_value: concatenated_value
+  - Compute the keccak256 digest of `concatenated_value`: digest
+  - obtain the base58 representation of `digest`.
+
+Example:
+
+```js
+{
+"id": "did:lac1:1iT5gtL8winNLChdgSEK57ZoV7H4qDXDUDoALVtNbfDXb3uaD4QTSExWZGrYfdbC4XvA#GsvAUXzoBg1KLM1kvXkZxYsrBg6dYfMegWNmWftBJ2hv",
+"type": "EcdsaSecp256k1RecoveryMethod2020",
+"controller": "did:lac1:1iT5gtL8winNLChdgSEK57ZoV7H4qDXDUDoALVtNbfDXb3uaD4QTSExWZGrYfdbC4XvA",
+"blockchainAccountId": "eip155:648540:0x95d7723676AE52E71281Bc6868A05dB843aD8410"
+}
+
+```
+
+In this example `blockchainAccountId` represents the value of the attribute `value` corresponding to a particular `DIDDelegateChanged` log.
+
+For services, the structure is the following:
+
+```js
+{
+"id": "<did>#<svc-identifier>",
+"type": "<service_type>",
+"serviceEndpoint": "<service_url>"
+}
+```
+
+In this case, the `id` property has the following structure: ${did}#${svc-identifier}; where:
+
+- `did` is the DID identifier coming from the request asking for the DID Document.
+- svc-identifier is calculated as follows:
+  - Convert `type` string, coming in `name` property ([according to this specification](./DIDAttributesServices.md#verification-methods)) of the `DIDAttributeChanged`, to utf-8 array: utf8_array_type
+  - Convert the the hex value coming from the retrieved `DIDAttributeChanged` `value` attribute bytes: value_array_value
+  - concatenate both utf8_array_type and value_array_value: concatenated_value
+  - Compute the keccak256 digest of `concatenated_value`: digest
+  - obtain the base58 representation of `digest`.
+
+Example:
+
+```js
+{
+  "id": "did:lac1:1iT5gtL8winNLChdgSEK57ZoV7H4qDXDUDoALVtNbfDXb3uaD4QTSExWZGrYfdbC4XvA#enpoh49epeEtzeq8TZbu7TatJrQEHmLtBfQZbrhYUci",
+  "type": "LinkedDomains",
+  "serviceEndpoint": "https://auth-svcs.com"
+}
+```
+
+In this example `serviceEndpoint` represents the value of the attribute `value` corresponding to a particular `DIDAttributeChanged` log.
+
 #### Update
 
 The DID Document may be updated by invoking the relevant smart contract functions as defined by the [DID registry](./contracts/identity/didRegistry/DIDRegistry.sol). This includes changes to the account owner, adding delegates and adding additional attributes. Please find a detailed description in the [DID Registry Documentation](./DidRegistry.md)
 
 These functions will trigger the respective Ethereum events which are used to build the DID Document for a given account as described in [Enumerating Contract Events](./DidSpecs.md#enumerating-contract-events-to-build-the-did-document) to build the DID Document.
-
-**Note**: Extending the validity of some attribute/delegate in the DID Registry will create a new input in the DID Document.
 
 #### Delete
 
