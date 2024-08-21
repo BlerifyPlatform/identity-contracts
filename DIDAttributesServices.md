@@ -13,7 +13,7 @@ Where `{type}` can be:
 - **invo**: for an Invocation Capability Key
 - **svc**: for a Service
 
-The `{controller}` represents the Verification Method controller, and can be any string DID or DID fragment.
+The `{controller}` represents the Verification Method controller, and can be any string representing a DID. Semantically this value points to a DID that controls the specified cryptographic key. Additionally, this value is not necessarily the DID specified in the `id` DID document property
 
 The `{algorithm}` can be one of the following in compliance with the W3C specification https://w3c.github.io/did-spec-registries/:
 
@@ -36,6 +36,23 @@ And the `{encoding}` is the Public Key encoding type, the possible values are:
 
 > **Note:** The `{encoding}` only refers to the key encoding in the resolved DID document.
 > Attribute values sent to the smart contract registry should always be hex encodings of the raw public key data.
+
+
+### Saving Data to the DID Registry
+
+The method to add attributes to the DID Registry  is `setAttribute`; this has the following method signature:
+
+```js
+function setAttribute(
+        address identity,
+        bytes memory name,
+        bytes memory value,
+        uint validity
+    )
+```
+
+To achieve alignment regarding the data being saved, any complex data format such as JSON elements must be canonicalized using [RFC-8785](https://datatracker.ietf.org/doc/html/rfc8785) before adding them as a `value` parameter in the `setAttribute` method.
+
 
 ## Service Endpoints
 
