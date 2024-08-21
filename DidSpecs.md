@@ -77,7 +77,6 @@ A successful create operation will render a value like `did:lac1:1iT6937zvW4RJxf
 ```sh
 {
   "@context": "https://www.w3.org/ns/did/v1",
-{
   "id": "did:lac1:4Kx9Qj58rAH7Cnhfx3sCWvc5qT65qtGfwXoYj4MnCsJBEHH4maNJBqAj8fzFDbhu7p2YR",
   "controller": "did:lac1:4Kx9Qj58rAH7Cnhfx3sCWvc5qT65qtGfwXoYj4MnCsJBEHH4maNJBqAj8fzFDbhu7p2YR",
   "verificationMethod": [
