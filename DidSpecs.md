@@ -1,9 +1,5 @@
 # LAC1 DID Method Specification
 
-### Author
-
-- LACChain
-
 ### Introduction
 
 In compliance with the [W3C did core specs](https://www.w3.org/TR/did-core/) we propose a new DID method based on [ethr did method](https://github.com/decentralized-identity/ethr-did-resolver/blob/master/doc/did-method-spec.md) and the [LAC did method](https://github.com/lacchain/lacchain-did-registry/blob/master/DID_SPEC.md). The values added in the proposed DID method are the capability to encode the exact path, in the DID, to resolve the underlying DID registry.
