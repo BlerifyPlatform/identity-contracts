@@ -204,10 +204,10 @@ Example:
 
 Only events with a `validTo` (measured in seconds) greater or equal to the current time should be included in the DID document. It is also possible to know a DID Document where given a `versionTime` or `versionId` (specified the didURL query string)
 
-##### id properties of entries
+##### id property for verification methods
 
-- Attribute or delegate changes that result in verificationMethod entries MUST set the id ${did}#${vm-identifier}.
-- Attributes that result in service entries MUST set the id to ${did}#service-${service-identifier}
+- Attribute or delegate changes that result in verificationMethod entries MUST set the id `${did}#${vm-identifier}`.
+- Attributes that result in service entries MUST set the id to `${did}#service-${service-identifier}`
 
 `vm-identifier` and `service-identifier` are explained in this section.
 
@@ -246,6 +246,8 @@ Example: The following object represents a valid verification method.
 
 In this example `publicKeyJwk` represents the value of the attribute `value` corresponding to a particular `DIDAttributeChanged` log.
 
+##### id property for verification methods derived from onchain delegates
+
 For verification methods derived from onchain delegates, the structure is the following:
 
 ```js
@@ -258,7 +260,7 @@ For verification methods derived from onchain delegates, the structure is the fo
 
 ```
 
-In this case, the `id` property has the following structure: ${did}#${vm-identifier}; where:
+In this case, the `id` property has the following structure: `${did}#${vm-identifier}`; where:
 
 - `did` is the DID identifier coming from the request asking for the DID Document.
 - vm-identifier is calculated as follows:
@@ -284,6 +286,8 @@ Example:
 
 In this example `blockchainAccountId` represents the value of the attribute `value` corresponding to a particular `DIDDelegateChanged` log.
 
+##### id property for services
+
 For services, the structure is the following:
 
 ```js
@@ -294,7 +298,7 @@ For services, the structure is the following:
 }
 ```
 
-In this case, the `id` property has the following structure: ${did}#${svc-identifier}; where:
+In this case, the `id` property has the following structure: `${did}#${svc-identifier}`; where:
 
 - `did` is the DID identifier coming from the request asking for the DID Document.
 - svc-identifier is calculated as follows:
