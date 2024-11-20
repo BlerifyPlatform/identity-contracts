@@ -204,24 +204,14 @@ Example:
 
 Only events with a `validTo` (measured in seconds) greater or equal to the current time should be included in the DID document. It is also possible to know a DID Document where given a `versionTime` or `versionId` (specified the didURL query string)
 
-##### id properties of entries
+##### id property for verification methods
 
-- Attribute or delegate changes that result in verificationMethod entries MUST set the id ${did}#${vm-identifier}.
-- Attributes that result in service entries MUST set the id to ${did}#service-${eventIndex}
+- Attribute or delegate changes that result in verificationMethod entries MUST set the id `${did}#${vm-identifier}`.
+- Attributes that result in service entries MUST set the id to `${did}#service-${service-identifier}`
 
-where eventIndex is the index of the event that modifies the section of the DID document partaining services.
+`vm-identifier` and `service-identifier` are explained in this section.
 
-Example
-
-- add key => #vm-1 is added
-- add another key => #vm-2 is added
-- add delegate => #vm-3 is added
-- add service => #service-1 is added
-- revoke first key => #vm-1 gets removed from the DID document; #vm-2 and #delegate-3 remain.
-- add another delegate => #vm-5 is added (earlier revocation is counted as an event)
-- first delegate expires => vm-3 is removed, #vm-5 remains intact
-
-Any verification method other than onchain delegates follows this structure:
+Verification methods are added through the smart contract method `setAttribute`. Any verification method (except verification methods derived from onchain delegates) follows the structure:
 
 ```js
 {
@@ -230,20 +220,19 @@ Any verification method other than onchain delegates follows this structure:
 "controller": "<did>",
 "<publicKeyJwk>": "<key>"
 }
-
 ```
 
 Where:
 
 - `did` is the `controller` string coming in `name` property ([according to this specification](./DIDAttributesServices.md#verification-methods)) of the `DIDAttributeChanged` smart contract log.
-- vm-identifier is calculated as follows:
+- vm-identifier is calculated as follows (algorithm intended to be used by did resolvers):
   - Convert `did` to utf-8 array: utf8_array_controller
   - Convert the the hex value coming from the retrieved `DIDAttributeChanged` `value` attribute bytes: value_array_value
   - concatenate both utf8_array_controller and value_array_value: concatenated_value
   - Compute the keccak256 digest of `concatenated_value`: digest
   - obtain the base58 representation of `digest`.
 
-Example:
+Example: The following object represents a valid verification method.
 
 ```js
 {
@@ -256,7 +245,9 @@ Example:
 
 In this example `publicKeyJwk` represents the value of the attribute `value` corresponding to a particular `DIDAttributeChanged` log.
 
-For onchain delegates, the structure is the following:
+##### id property for verification methods derived from onchain delegates
+
+For verification methods derived from onchain delegates, the structure is the following:
 
 ```js
 {
@@ -268,7 +259,7 @@ For onchain delegates, the structure is the following:
 
 ```
 
-In this case, the `id` property has the following structure: ${did}#${vm-identifier}; where:
+In this case, the `id` property has the following structure: `${did}#${vm-identifier}`; where:
 
 - `did` is the DID identifier coming from the request asking for the DID Document.
 - vm-identifier is calculated as follows:
@@ -277,6 +268,7 @@ In this case, the `id` property has the following structure: ${did}#${vm-identif
   - concatenate both utf8_array_controller and value_array_value: concatenated_value
   - Compute the keccak256 digest of `concatenated_value`: digest
   - obtain the base58 representation of `digest`.
+- Note: Verification methods derived from onchain delegates will only support `blockchainAccountId` to express the blockchain key associated to the DID.
 
 Example:
 
@@ -292,6 +284,8 @@ Example:
 
 In this example `blockchainAccountId` represents the value of the attribute `value` corresponding to a particular `DIDDelegateChanged` log.
 
+##### id property for services
+
 For services, the structure is the following:
 
 ```js
@@ -302,7 +296,7 @@ For services, the structure is the following:
 }
 ```
 
-In this case, the `id` property has the following structure: ${did}#${svc-identifier}; where:
+In this case, the `id` property has the following structure: `${did}#${svc-identifier}`; where:
 
 - `did` is the DID identifier coming from the request asking for the DID Document.
 - svc-identifier is calculated as follows:
