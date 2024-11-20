@@ -231,7 +231,6 @@ Where:
   - concatenate both utf8_array_controller and value_array_value: concatenated_value
   - Compute the keccak256 digest of `concatenated_value`: digest
   - obtain the base58 representation of `digest`.
-  - Note: vm-identifier can also be calculated from the parameters set in the [setAttribute](./DIDAttributesServices.md#saving-data-to-the-did-registry) smart contract method
 
 Example: The following object represents a valid verification method.
 
@@ -269,7 +268,6 @@ In this case, the `id` property has the following structure: `${did}#${vm-identi
   - concatenate both utf8_array_controller and value_array_value: concatenated_value
   - Compute the keccak256 digest of `concatenated_value`: digest
   - obtain the base58 representation of `digest`.
-  - Note: vm-identifier can also be calculated from the parameters set in the [setAttribute](./DIDAttributesServices.md#saving-data-to-the-did-registry) smart contract method
 - Note: Verification methods derived from onchain delegates will only support `blockchainAccountId` to express the blockchain key associated to the DID.
 
 Example:
@@ -307,7 +305,6 @@ In this case, the `id` property has the following structure: `${did}#${svc-ident
   - concatenate both utf8_array_type and value_array_value: concatenated_value
   - Compute the keccak256 digest of `concatenated_value`: digest
   - obtain the base58 representation of `digest`.
-  - Note: vm-identifier can also be calculated from the parameters set in the [setAttribute](./DIDAttributesServices.md#saving-data-to-the-did-registry) smart contract method
 
 Example:
 
