@@ -185,10 +185,6 @@ Which adds a EcdsaSecp256k1RecoveryMethod2020 to the verificationMethod section 
 
 Which adds a EcdsaSecp256k1RecoveryMethod2020 to the verificationMethod section of document and a reference to it in the authentication section.
 
-_Note_ the delegateType is a bytes32 type.
-
-Valid on-chain delegates MUST be added to the verificationMethod array as EcdsaSecp256k1RecoveryMethod2020 entries, with the delegate address listed in the blockchainAccountId property and prefixed with `eip155:<chainId>:`, according to [CAIP10](https://github.com/ChainAgnostic/CAIPs/blob/main/CAIPs/caip-10.md)
-
 Example:
 
 ```js
@@ -199,6 +195,12 @@ Example:
   "blockchainAccountId": "eip155:648540:0x56dD32c6Bc704FE2eB73f821222Aa299DfA25740"
 }
 ```
+
+_Note_ the delegateType is a bytes32 type. For verifyKey its value is `0x766572694b657900000000000000000000000000000000000000000000000000` and for sigAuth its value is `0x7369674175746800000000000000000000000000000000000000000000000000`
+
+_Note_ Valid on-chain delegates MUST be added to the verificationMethod array as EcdsaSecp256k1RecoveryMethod2020 entries, with the delegate address listed in the blockchainAccountId property and prefixed with `eip155:<chainId>:`, according to [CAIP10](https://github.com/ChainAgnostic/CAIPs/blob/main/CAIPs/caip-10.md)
+
+_Note_ Other than the DID main controller only delegates MUST add verification methods that contain the attribute `blockchainAccountId`
 
 ##### DID Document versions
 
@@ -425,7 +427,7 @@ This DID method supports resolving previous versions of the DID document by spec
 
 Example: did:lac1:1iT5jsMUTRkENt6WspMf5CGJNc9bUxt38urgGGxqaFhrLn4cmsC6XNddWb1pAUfonk33?versionId=12090175
 
-The `versionId` is the block number at which the DID resolution MUST be performed. Only `DIDAttributeChanged` and `DIDDelegateChanged` events, from [DID Registry](./contracts/identity/didRegistry/DIDRegistry.sol) prior to or contained in this block number are to be considered when building the event history.
+The `versionId` is the block number until which the DID resolution MUST be performed. Only `DIDAttributeChanged` and `DIDDelegateChanged` events, from [DID Registry](./contracts/identity/didRegistry/DIDRegistry.sol) prior to or contained in this block number are to be considered when building the event history.
 
 `updated` MUST be the ISO date string of the block time at which the DID resolution MUST be performed (without sub-second resolution). In the `DIDAttributeChanged` and `DIDDelegateChanged` it is the `changeTime` attribute.
 
@@ -436,7 +438,7 @@ If there are any events after that block that mutate the DID, the earliest of th
 
 In case the DID has had updates prior to or included in the `versionId` block number, the `updated` and `versionId` properties of the didDocumentMetadata MUST correspond to the latest block prior to the versionId query string param.
 
-Any timestamp comparisons of validTo fields of the event history MUST be done against the versionId block timestamp.
+Any timestamp comparisons of `validTo` fields of the event history MUST be done against the versionId block timestamp.
 
 Example: ?versionId=12101682
 
@@ -457,18 +459,18 @@ This DID method supports resolving previous versions of the DID document by spec
 
 Example: did:lac1:1iT5jsMUTRkENt6WspMf5CGJNc9bUxt38urgGGxqaFhrLn4cmsC6XNddWb1pAUfonk33?versionTime=2021-05-10T17:00:00Z
 
-The `versionTime` is the **time related to a block number** at which the DID resolution MUST be performed. Only `DIDAttributeChanged` and `DIDDelegateChanged` events, from [DID Registry](./contracts/identity/didRegistry/DIDRegistry.sol) prior to or contained in that block number are to be considered when building the event history. `versionTime` parameter MUST be compared with the `changeTime` parameter in the mentioned events to filter the ones to be considered in the DID document.
+The `versionTime` is the **time related to a block number** until which the DID resolution MIGHT be performed. Only `DIDAttributeChanged` and `DIDDelegateChanged` events, from [DID Registry](./contracts/identity/didRegistry/DIDRegistry.sol) prior to or contained in that block number MUST be considered when building the event history. `versionTime` parameter MUST be compared with the `changeTime` parameter in the mentioned events to filter the ones to be considered in the DID document.
 
-`updated` MUST be the ISO date string of the block time at which the DID resolution MUST be performed (without sub-second resolution). In the `DIDAttributeChanged` and `DIDDelegateChanged` it is the `changeTime` attribute.
+`updated` MUST be the ISO date string of the block time until which the DID resolution MUST be performed, let us call it latest-target-block (without sub-second resolution). In the `DIDAttributeChanged` and `DIDDelegateChanged` it is the `changeTime` attribute.
 
-If there are any events after that block that mutate the DID, the earliest of them SHOULD be used to populate the properties of the didDocumentMetadata:
+If there are any events after latest-target-block that mutate the DID, the earliest of these events SHOULD be used to populate the properties of the didDocumentMetadata:
 
 - `nextVersionId` MUST be the block number of the next update to the DID document.
 - `nextUpdate` MUST be the ISO date string of the block time of the next update (without sub-second resolution). In the `DIDAttributeChanged` and `DIDDelegateChanged` it is the `changeTime` attribute.
 
 In case the DID has had updates prior to or included in the block number correspondent to the mapped `versionTime`, the `updated` and `versionId` properties of the didDocumentMetadata MUST correspond to the latest block prior to the `versionTime` query string param.
 
-Any timestamp comparisons of validTo fields of the event history MUST be done against the timestamp block number mapped from`versionTime` or otherwise the prior nearest block timestamp to `versionTime` where a change occurred.
+Any timestamp comparisons of `validTo` fields of the event history MUST be done against the timestamp of the block mapped from`versionTime` or otherwise the prior nearest block timestamp to `versionTime` where a change occurred.
 
 Example: ?versionTime=2021-05-10T17:00:00Z
 
